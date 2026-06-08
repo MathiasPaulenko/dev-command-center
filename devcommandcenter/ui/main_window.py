@@ -614,19 +614,19 @@ class MainWindow(QMainWindow):
         sb_layout.setSpacing(4)
 
         # Brand
-        brand = QLabel("DevCmd\nCenter")
+        brand = QLabel("DevCommandCenter")
+        brand.setWordWrap(False)
         brand.setStyleSheet(
-            f"font-size: 20px; font-weight: 800; color: {TEXT_PRIMARY};"
-            f"background: transparent; border: none; letter-spacing: -0.5px;"
+            f"font-size: 17px; font-weight: 800; color: {TEXT_PRIMARY};"
+            f"background: transparent; border: none;"
         )
         sb_layout.addWidget(brand)
 
-        ver_lbl = QLabel(f"v{APP_VERSION}")
-        ver_lbl.setStyleSheet(
-            f"font-size: 11px; color: {TEXT_DISABLED};"
-            f"background: transparent; border: none; margin-bottom: 16px;"
-        )
-        sb_layout.addWidget(ver_lbl)
+        accent_line = QFrame()
+        accent_line.setFixedSize(40, 2)
+        accent_line.setStyleSheet(f"background-color: {ACCENT_FILL}; border: none;")
+        sb_layout.addWidget(accent_line)
+        sb_layout.addSpacing(8)
 
         # Running counter
         sep1 = QFrame()
@@ -670,6 +670,15 @@ class MainWindow(QMainWindow):
             sb_layout.addWidget(btn)
 
         sb_layout.addStretch()
+
+        ver_lbl = QLabel(f"v{APP_VERSION}")
+        ver_lbl.setStyleSheet(
+            f"font-size: 11px; color: {TEXT_DISABLED};"
+            f"background: transparent; border: none;"
+        )
+        ver_lbl.setAlignment(Qt.AlignmentFlag.AlignRight)
+        sb_layout.addWidget(ver_lbl)
+        sb_layout.addSpacing(8)
 
         # New command button at sidebar bottom
         self.add_btn = QPushButton("+ New Command")
