@@ -529,10 +529,7 @@ class MainWindow(QMainWindow):
             command.id, command.command, args,
             command.working_directory or "", env
         )
-        if ok:
-            self._running_ids.add(command.id)
-            self._update_status_bar()
-        else:
+        if not ok:
             QMessageBox.information(self, "Info", f"'{command.name}' is already running.")
 
     def stop_command(self, command: Command) -> None:
