@@ -219,6 +219,8 @@ class CommandCard(QWidget):
         body_layout.addLayout(sec_row)
 
         self.setMinimumHeight(280)
+        self.setMinimumWidth(260)
+        self.setMaximumWidth(420)
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
 
     def update_status(self, state: str) -> None:
@@ -428,11 +430,12 @@ class MainWindow(QMainWindow):
             service = CommandService(session)
             commands = service.get_all()
             self._all_commands = commands
-            for idx, cmd in enumerate(commands):
+            for cmd in commands:
                 self._command_names[cmd.id] = cmd.name
-                self.add_command_card(cmd, idx)
+                self.add_command_card(cmd)
         finally:
             session.close()
+        self._relayout_grid()
 
     def filter_commands(self, text: str) -> None:
         self._filter_text = text.lower()
@@ -457,10 +460,42 @@ class MainWindow(QMainWindow):
                 self._filter_state == "All"
                 or card._state == self._filter_state
             )
-            card.setVisible(text_ok and state_ok)
+            card._visible = text_ok and state_ok
+        self._relayout_grid()
 
-    def add_command_card(self, command: Command, index: int) -> None:
+    def _relayout_grid(self) -> None:
+        # Remove all cards from layout (without destroying them)
+        while self.grid_layout.count():
+            self.grid_layout.takeAt(0)
+
+        # Compute number of columns from available width
+        CARD_W = 340  # target card width incl. spacing
+        avail = self.scroll_area.viewport().width() - 56  # minus content margins
+        cols = max(1, avail // CARD_W)
+
+        visible_cards = [
+            c for c in self._cards.values() if getattr(c, "_visible", True)
+        ]
+        for c in self._cards.values():
+            c.setVisible(getattr(c, "_visible", True))
+
+        for idx, card in enumerate(visible_cards):
+            row, col = divmod(idx, cols)
+            self.grid_layout.addWidget(card, row, col)
+
+        # Keep cards left-aligned; trailing column absorbs extra space
+        for i in range(cols):
+            self.grid_layout.setColumnStretch(i, 0)
+        self.grid_layout.setColumnStretch(cols, 1)
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        if hasattr(self, "_cards") and self._cards:
+            self._relayout_grid()
+
+    def add_command_card(self, command: Command) -> None:
         card = CommandCard(command)
+        card._visible = True
         card.run_btn.clicked.connect(lambda _, c=command: self.run_command(c))
         card.stop_btn.clicked.connect(lambda _, c=command: self.stop_command(c))
         card.logs_btn.clicked.connect(lambda _, c=command: self.show_logs_for_command(c))
@@ -469,9 +504,6 @@ class MainWindow(QMainWindow):
         card.mouseDoubleClickEvent = lambda ev, c=command: self.run_command(c)
         current_state = self.process_service.get_state(command.id)
         card.update_status(current_state)
-        row = index // 3
-        col = index % 3
-        self.grid_layout.addWidget(card, row, col)
         self._cards[command.id] = card
 
     def run_command(self, command: Command) -> None:
