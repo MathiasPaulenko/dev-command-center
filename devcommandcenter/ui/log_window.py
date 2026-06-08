@@ -77,6 +77,7 @@ class LogWindow(QDialog):
         header.addStretch()
 
         self.stop_btn = QPushButton("Stop")
+        self.stop_btn.setMinimumHeight(34)
         self.stop_btn.setStyleSheet(
             f"""
             QPushButton {{
@@ -101,7 +102,14 @@ class LogWindow(QDialog):
         header.addWidget(self.stop_btn)
 
         self.clear_btn = QPushButton("Clear")
-        self.clear_btn.setFixedWidth(60)
+        self.clear_btn.setMinimumHeight(34)
+        self.clear_btn.setStyleSheet(
+            f"QPushButton {{ background-color: {BG_ELEVATED}; color: {TEXT_SECONDARY};"
+            f"border: 1px solid {BORDER}; border-radius: 8px;"
+            f"padding: 7px 16px; font-size: 12px; font-weight: 500; }}"
+            f"QPushButton:hover {{ background-color: {BG_INPUT}; color: {TEXT_PRIMARY};"
+            f"border-color: {BORDER_HOVER}; }}"
+        )
         self.clear_btn.clicked.connect(self._clear_output)
         header.addWidget(self.clear_btn)
 
