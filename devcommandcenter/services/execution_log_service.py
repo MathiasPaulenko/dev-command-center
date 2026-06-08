@@ -31,3 +31,12 @@ class ExecutionLogService:
             .order_by(ExecutionLog.started_at.desc())
             .first()
         )
+
+    def delete_by_command_id(self, command_id: int) -> int:
+        deleted = (
+            self.session.query(ExecutionLog)
+            .filter(ExecutionLog.command_id == command_id)
+            .delete()
+        )
+        self.session.commit()
+        return deleted

@@ -3,7 +3,7 @@ from datetime import datetime
 
 from pathlib import Path
 
-from PySide6.QtCore import QCoreApplication, Qt, Slot
+from PySide6.QtCore import QCoreApplication, Qt, Signal, Slot
 from PySide6.QtGui import QPainter, QPixmap
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import (
@@ -254,8 +254,11 @@ class CommandCard(QWidget):
 
 
 class ExecutionHistoryDialog(QDialog):
+    historyCleared = Signal(int)
+
     def __init__(self, command: Command, parent: QWidget | None = None) -> None:
         super().__init__(parent)
+        self.command_id = command.id
         self.setWindowTitle(f"Execution History: {command.name}")
         self.resize(700, 500)
         self.setup_ui()
@@ -321,12 +324,46 @@ class ExecutionHistoryDialog(QDialog):
         footer_layout = QHBoxLayout(footer)
         footer_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         footer_layout.setContentsMargins(20, 0, 20, 0)
+
+        clear_btn = QPushButton("Clear History")
+        clear_btn.setMinimumHeight(36)
+        clear_btn.setStyleSheet(
+            f"QPushButton {{ background-color: {BG_ELEVATED}; color: {RED};"
+            f"border: 1px solid {BORDER}; border-radius: 8px;"
+            f"padding: 7px 16px; font-size: 12px; font-weight: 500; }}"
+            f"QPushButton:hover {{ background-color: {RED_FILL}; color: #ffffff; border-color: {RED_FILL}; }}"
+        )
+        clear_btn.clicked.connect(self._clear_history)
+        footer_layout.addWidget(clear_btn)
+
+        footer_layout.addStretch()
+
         close_btn = QPushButton("Close")
         close_btn.setMinimumHeight(36)
         close_btn.setMinimumWidth(100)
         close_btn.clicked.connect(self.accept)
         footer_layout.addWidget(close_btn)
         root.addWidget(footer)
+
+    def _clear_history(self) -> None:
+        reply = QMessageBox.question(
+            self,
+            "Confirm Clear",
+            "Delete all execution history for this command?\nThis action cannot be undone.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+        session = SessionLocal()
+        try:
+            count = ExecutionLogService(session).delete_by_command_id(self.command_id)
+        finally:
+            session.close()
+        self.list_widget.clear()
+        self.detail.clear()
+        self.list_widget.addItem("No executions recorded yet.")
+        self.historyCleared.emit(self.command_id)
 
     def _load_history(self, command_id: int) -> None:
         session = SessionLocal()
@@ -973,7 +1010,13 @@ class MainWindow(QMainWindow):
 
     def show_history_for_command(self, command: Command) -> None:
         dlg = ExecutionHistoryDialog(command, self)
+        dlg.historyCleared.connect(self._on_history_cleared)
         dlg.exec()
+
+    def _on_history_cleared(self, command_id: int) -> None:
+        card = self._cards.get(command_id)
+        if card:
+            card.set_last_run(None)
 
     def duplicate_command(self, command: Command) -> None:
         data = {
