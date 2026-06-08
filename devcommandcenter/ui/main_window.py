@@ -671,15 +671,6 @@ class MainWindow(QMainWindow):
 
         sb_layout.addStretch()
 
-        ver_lbl = QLabel(f"v{APP_VERSION}")
-        ver_lbl.setStyleSheet(
-            f"font-size: 11px; color: {TEXT_DISABLED};"
-            f"background: transparent; border: none;"
-        )
-        ver_lbl.setAlignment(Qt.AlignmentFlag.AlignRight)
-        sb_layout.addWidget(ver_lbl)
-        sb_layout.addSpacing(8)
-
         # New command button at sidebar bottom
         self.add_btn = QPushButton("+ New Command")
         self.add_btn.setMinimumHeight(40)
@@ -724,6 +715,14 @@ class MainWindow(QMainWindow):
         self.search_box.setFixedHeight(36)
         self.search_box.textChanged.connect(self.filter_commands)
         topbar_layout.addWidget(self.search_box)
+
+        self.version_lbl = QLabel(f"v{APP_VERSION}")
+        self.version_lbl.setStyleSheet(
+            f"font-size: 12px; font-weight: 600; color: {TEXT_DISABLED};"
+            f"background-color: {BG_ELEVATED}; border: 1px solid {BORDER};"
+            f"border-radius: 8px; padding: 4px 10px;"
+        )
+        topbar_layout.addWidget(self.version_lbl)
         main_vbox.addWidget(topbar)
 
         # ── Grid scroll area ──────────────────────────────────
