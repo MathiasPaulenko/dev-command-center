@@ -128,9 +128,9 @@ class CommandCard(QWidget):
         body_layout.setSpacing(14)
         outer.addWidget(body, stretch=1)
 
-        # ── Name + badge row ──────────────────────────────────
+        # ── Name + badge + menu row ───────────────────────────
         top_row = QHBoxLayout()
-        top_row.setSpacing(10)
+        top_row.setSpacing(8)
         self.name_label = QLabel(self.command_obj.name)
         self.name_label.setStyleSheet(
             f"font-size: 16px; font-weight: 700; color: {TEXT_PRIMARY};"
@@ -140,9 +140,19 @@ class CommandCard(QWidget):
         )
         self.status_badge = QLabel("Stopped")
         self.status_badge.setStyleSheet(status_badge_stylesheet(STATUS_STOPPED))
+        self.menu_btn = QPushButton("⋮")
+        self.menu_btn.setFixedSize(26, 26)
+        self.menu_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.menu_btn.setStyleSheet(
+            f"QPushButton {{ background-color: transparent; color: {TEXT_DISABLED};"
+            f"border: none; border-radius: 6px; font-size: 16px; padding: 0; }}"
+            f"QPushButton:hover {{ color: {TEXT_PRIMARY};"
+            f"background-color: {BG_ELEVATED}; }}"
+        )
         top_row.addWidget(self.name_label)
         top_row.addStretch()
         top_row.addWidget(self.status_badge)
+        top_row.addWidget(self.menu_btn)
         body_layout.addLayout(top_row)
 
         # ── Description ───────────────────────────────────────
@@ -232,22 +242,7 @@ class CommandCard(QWidget):
         action_row.addWidget(self.stop_btn)
         body_layout.addLayout(action_row)
 
-        # ── Options button ────────────────────────────────────
-        self.options_btn = QPushButton("⋮  Options")
-        self.options_btn.setMinimumHeight(36)
-        self.options_btn.setStyleSheet(
-            f"QPushButton {{ background-color: {BG_ELEVATED}; color: {TEXT_SECONDARY};"
-            f"border: 1px solid {BORDER}; border-radius: 8px;"
-            f"padding: 7px 0; font-size: 12px; font-weight: 500; }}"
-            f"QPushButton:hover {{ background-color: {BG_INPUT}; color: {TEXT_PRIMARY};"
-            f"border-color: {BORDER_HOVER}; }}"
-        )
-        self.options_btn.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
-        )
-        body_layout.addWidget(self.options_btn)
-
-        self.setFixedSize(320, 290)
+        self.setFixedSize(320, 270)
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
     def update_status(self, state: str) -> None:
@@ -838,7 +833,7 @@ class MainWindow(QMainWindow):
         card._visible = True
         card.run_btn.clicked.connect(lambda _, c=command: self.run_command(c))
         card.stop_btn.clicked.connect(lambda _, c=command: self.stop_command(c))
-        card.options_btn.clicked.connect(lambda _, c=command, crd=card: self._show_card_menu(c, crd))
+        card.menu_btn.clicked.connect(lambda _, c=command, crd=card: self._show_card_menu(c, crd))
         card.mouseDoubleClickEvent = lambda ev, c=command: self.run_command(c)
         current_state = self.process_service.get_state(command.id)
         card.update_status(current_state)
@@ -868,7 +863,7 @@ class MainWindow(QMainWindow):
         menu.addSeparator()
         del_action = menu.addAction("  Delete  ")
         del_action.triggered.connect(lambda: self.delete_command(command))
-        menu.exec(card.options_btn.mapToGlobal(card.options_btn.rect().bottomLeft()))
+        menu.exec(card.menu_btn.mapToGlobal(card.menu_btn.rect().bottomLeft()))
 
     def run_command(self, command: Command) -> None:
         args = command.arguments or []
