@@ -614,16 +614,24 @@ class MainWindow(QMainWindow):
                 session.close()
 
     def show_logs_for_command(self, command: Command) -> None:
-        if command.id in self._log_windows:
-            win = self._log_windows[command.id]
-            win.raise_()
-            win.activateWindow()
-            return
+        win = self._log_windows.get(command.id)
+        if win is not None:
+            try:
+                if not win.isVisible():
+                    win.show()
+                win.raise_()
+                win.activateWindow()
+                return
+            except RuntimeError:
+                # Underlying C++ object was deleted; drop the stale reference.
+                self._log_windows.pop(command.id, None)
 
         win = LogWindow(command.id, command.name, self.process_service, self)
-        win.finished.connect(lambda: self._log_windows.pop(command.id, None))
+        win.finished.connect(lambda *_: self._log_windows.pop(command.id, None))
         self._log_windows[command.id] = win
         win.show()
+        win.raise_()
+        win.activateWindow()
 
     def _auto_run_commands(self) -> None:
         for cmd in getattr(self, "_all_commands", []):

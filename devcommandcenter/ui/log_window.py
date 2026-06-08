@@ -47,6 +47,7 @@ class LogWindow(QDialog):
         self.setWindowTitle(f"Logs: {command_name}")
         self.resize(800, 500)
         self._is_running = False
+        self._signals_connected = False
         self.setup_ui()
         self.connect_signals()
         self.update_title()
@@ -127,14 +128,23 @@ class LogWindow(QDialog):
         self.setStyleSheet(APP_STYLESHEET)
 
     def connect_signals(self) -> None:
+        if self._signals_connected:
+            return
         self.process_service.stateChanged.connect(self._on_state_changed)
         self.process_service.outputReady.connect(self._on_output)
         self.process_service.errorReady.connect(self._on_error)
+        self._signals_connected = True
 
     def disconnect_signals(self) -> None:
-        self.process_service.stateChanged.disconnect(self._on_state_changed)
-        self.process_service.outputReady.disconnect(self._on_output)
-        self.process_service.errorReady.disconnect(self._on_error)
+        if not self._signals_connected:
+            return
+        try:
+            self.process_service.stateChanged.disconnect(self._on_state_changed)
+            self.process_service.outputReady.disconnect(self._on_output)
+            self.process_service.errorReady.disconnect(self._on_error)
+        except (RuntimeError, TypeError):
+            pass
+        self._signals_connected = False
 
     @Slot(str, str)
     def _on_state_changed(self, command_id: str, state: str) -> None:
@@ -250,5 +260,8 @@ class LogWindow(QDialog):
         self.setWindowTitle(f"{prefix} Logs: {self.command_name}")
 
     def closeEvent(self, event) -> None:
+        # Detach from the shared ProcessService and let QDialog emit `finished`
+        # (via its own closeEvent -> reject) so the owner drops us from its
+        # registry and the window can be reopened later.
         self.disconnect_signals()
-        event.accept()
+        super().closeEvent(event)
