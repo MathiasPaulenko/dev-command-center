@@ -222,10 +222,8 @@ class CommandCard(QWidget):
         sec_row.addWidget(self.delete_btn)
         body_layout.addLayout(sec_row)
 
-        self.setMinimumHeight(280)
-        self.setMinimumWidth(260)
-        self.setMaximumWidth(420)
-        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
+        self.setFixedSize(320, 300)
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
     def update_status(self, state: str) -> None:
         self._state = state
@@ -472,8 +470,8 @@ class MainWindow(QMainWindow):
         while self.grid_layout.count():
             self.grid_layout.takeAt(0)
 
-        # Compute number of columns from available width
-        CARD_W = 340  # target card width incl. spacing
+        # Fixed card width (320) + grid spacing (16)
+        CARD_W = 320 + 16
         avail = self.scroll_area.viewport().width() - 56  # minus content margins
         cols = max(1, avail // CARD_W)
 
@@ -485,7 +483,9 @@ class MainWindow(QMainWindow):
 
         for idx, card in enumerate(visible_cards):
             row, col = divmod(idx, cols)
-            self.grid_layout.addWidget(card, row, col)
+            self.grid_layout.addWidget(
+                card, row, col, Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft
+            )
 
         # Keep cards left-aligned; trailing column absorbs extra space
         for i in range(cols):
