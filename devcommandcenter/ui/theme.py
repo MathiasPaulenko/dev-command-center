@@ -5,6 +5,7 @@ BG_PRIMARY = "#0f1419"
 BG_SURFACE = "#1a1f2e"
 BG_ELEVATED = "#212736"
 BG_INPUT = "#2a3142"
+BG_CODE = "#1e2535"
 BORDER = "#3d4554"
 BORDER_HOVER = "#556070"
 BORDER_FOCUS = "#7aa2f7"
@@ -220,4 +221,16 @@ def status_badge_stylesheet(color: str) -> str:
     font-size: 11px;
     font-weight: bold;
     letter-spacing: 0.5px;
+"""
+
+
+def tag_chip_stylesheet() -> str:
+    return f"""
+    background-color: {ACCENT_PRIMARY}18;
+    color: {ACCENT_PRIMARY};
+    border: 1px solid {ACCENT_PRIMARY}30;
+    border-radius: 10px;
+    padding: 2px 10px;
+    font-size: 11px;
+    font-weight: 500;
 """
