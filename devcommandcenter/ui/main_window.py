@@ -696,7 +696,7 @@ class MainWindow(QMainWindow):
         topbar_layout.addStretch()
 
         self.search_box = QLineEdit()
-        self.search_box.setPlaceholderText("Search by name, description or tag...")
+        self.search_box.setPlaceholderText("Search by name or description...")
         self.search_box.setFixedWidth(320)
         self.search_box.setFixedHeight(36)
         self.search_box.textChanged.connect(self.filter_commands)
@@ -770,7 +770,6 @@ class MainWindow(QMainWindow):
                 not self._filter_text
                 or self._filter_text in card.command_obj.name.lower()
                 or (card.command_obj.description and self._filter_text in card.command_obj.description.lower())
-                or any(self._filter_text in t.lower() for t in (card.command_obj.tags or []))
             )
             state_ok = (
                 self._filter_state == "All"
@@ -985,7 +984,6 @@ class MainWindow(QMainWindow):
             "arguments": list(command.arguments) if command.arguments else [],
             "env_vars": dict(command.env_vars) if command.env_vars else {},
             "auto_run": False,
-            "tags": list(command.tags) if command.tags else [],
         }
         session = SessionLocal()
         try:
@@ -1057,7 +1055,6 @@ class MainWindow(QMainWindow):
                         "arguments": cmd.arguments,
                         "env_vars": cmd.env_vars,
                         "auto_run": cmd.auto_run,
-                        "tags": cmd.tags,
                     })
                 with open(path, "w", encoding="utf-8") as f:
                     json.dump(data, f, indent=2)

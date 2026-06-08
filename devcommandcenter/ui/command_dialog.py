@@ -35,58 +35,6 @@ from devcommandcenter.ui.theme import (
 )
 
 
-class TagEditor(QWidget):
-    def __init__(self, parent=None) -> None:
-        super().__init__(parent)
-        self._tags: list[str] = []
-        self.setup_ui()
-
-    def setup_ui(self) -> None:
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(8)
-        self.input = QLineEdit()
-        self.input.setPlaceholderText("Add tag...")
-        self.input.setMinimumHeight(34)
-        self.add_btn = QPushButton("Add")
-        self.add_btn.setFixedWidth(60)
-        self.add_btn.setMinimumHeight(34)
-        self.tags_label = QLabel("")
-        self.tags_label.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 12px;")
-        layout.addWidget(self.input, stretch=1)
-        layout.addWidget(self.add_btn)
-        layout.addWidget(self.tags_label)
-        self.add_btn.clicked.connect(self.add_tag)
-        self.input.returnPressed.connect(self.add_tag)
-
-    def add_tag(self) -> None:
-        text = self.input.text().strip()
-        if text and text not in self._tags:
-            self._tags.append(text)
-            self._update_label()
-        self.input.clear()
-
-    def _update_label(self) -> None:
-        parts = self._tags
-        if parts:
-            html = " ".join(
-                f"<span style='background:{BG_ELEVATED};color:#79c0ff;border:1px solid {BORDER};"
-                f"border-radius:6px;padding:2px 8px;font-size:11px;'>#{t}</span>"
-                for t in parts
-            )
-            self.tags_label.setText(html)
-        else:
-            self.tags_label.setText("")
-        self.tags_label.setTextFormat(Qt.TextFormat.RichText)
-
-    def get_tags(self) -> list[str]:
-        return list(self._tags)
-
-    def set_tags(self, tags: list[str]) -> None:
-        self._tags = list(tags)
-        self._update_label()
-
-
 class CommandDialog(QDialog):
     def __init__(self, parent=None, command: Optional[Command] = None) -> None:
         super().__init__(parent)
@@ -217,12 +165,6 @@ class CommandDialog(QDialog):
         self.auto_run_check.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 13px; spacing: 6px;")
         form.addRow("", self.auto_run_check)
 
-        # Tags
-        lbl_tags = QLabel("Tags")
-        lbl_tags.setStyleSheet(label_style)
-        self.tags_editor = TagEditor()
-        form.addRow(lbl_tags, self.tags_editor)
-
         layout.addLayout(form)
         layout.addStretch()
         root.addWidget(scroll_content, stretch=1)
@@ -261,7 +203,6 @@ class CommandDialog(QDialog):
         self.args_input.setText(json.dumps(command.arguments) if command.arguments else "")
         self.env_input.setText(json.dumps(command.env_vars) if command.env_vars else "")
         self.auto_run_check.setChecked(command.auto_run or False)
-        self.tags_editor.set_tags(command.tags or [])
 
     def get_data(self) -> dict:
         data = {
@@ -272,7 +213,6 @@ class CommandDialog(QDialog):
             "arguments": [],
             "env_vars": {},
             "auto_run": self.auto_run_check.isChecked(),
-            "tags": self.tags_editor.get_tags(),
         }
         args_text = self.args_input.text().strip()
         if args_text:
