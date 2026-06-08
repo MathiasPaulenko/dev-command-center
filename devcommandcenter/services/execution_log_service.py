@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
@@ -22,4 +22,12 @@ class ExecutionLogService:
             .filter(ExecutionLog.command_id == command_id)
             .order_by(ExecutionLog.started_at.desc())
             .all()
+        )
+
+    def get_latest(self, command_id: int) -> Optional[ExecutionLog]:
+        return (
+            self.session.query(ExecutionLog)
+            .filter(ExecutionLog.command_id == command_id)
+            .order_by(ExecutionLog.started_at.desc())
+            .first()
         )

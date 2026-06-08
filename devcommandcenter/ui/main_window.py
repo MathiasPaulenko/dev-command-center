@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 from PySide6.QtCore import QCoreApplication, Qt, Slot
 from PySide6.QtWidgets import (
@@ -580,6 +581,7 @@ class MainWindow(QMainWindow):
                 "output": stdout or None,
                 "error": stderr or None,
                 "exit_code": exit_code,
+                "finished_at": datetime.utcnow(),
             })
         finally:
             session.close()
