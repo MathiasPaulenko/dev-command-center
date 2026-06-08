@@ -1,42 +1,38 @@
 """DevCommandCenter — accessible dark theme (GitHub-inspired, WCAG AA)."""
 
-# ── Surfaces ─────────────────────────────────────────────────────────────────
-BG_BASE     = "#0d1117"   # main canvas
-BG_SIDEBAR  = "#010409"   # sidebar / topbar (darkest)
-BG_CARD     = "#161b22"   # card surface
-BG_ELEVATED = "#21262d"   # elevated / hover
-BG_INPUT    = "#21262d"   # inputs
-BG_CODE     = "#0d1117"   # code block
+BG_BASE     = "#0d1117"
+BG_SIDEBAR  = "#010409"
+BG_CARD     = "#161b22"
+BG_ELEVATED = "#21262d"
+BG_INPUT    = "#21262d"
+BG_CODE     = "#0d1117"
 
 BORDER       = "#30363d"  # default border
 BORDER_HOVER = "#484f58"  # hover border
 BORDER_FOCUS = "#4493f8"  # focus ring
 
-# ── Text (all ≥ 4.5:1 on dark surfaces) ──────────────────────────────────────
-TEXT_PRIMARY   = "#e6edf3"  # ~14:1  AAA
-TEXT_SECONDARY = "#9da7b3"  # ~6.2:1 AA
-TEXT_DISABLED  = "#6e7681"  # ~4:1   (large/decorative only)
+TEXT_PRIMARY   = "#e6edf3"
+TEXT_SECONDARY = "#9da7b3"
+TEXT_DISABLED  = "#6e7681"
 
-# ── Accents (bright variants = text on dark; solid variants = fills) ──────────
-ACCENT      = "#4493f8"   # primary blue (text/links on dark)
-ACCENT_FILL = "#1f6feb"   # blue button fill (white text = 5:1)
+ACCENT      = "#4493f8"
+ACCENT_FILL = "#1f6feb"
 ACCENT_HOVER = "#388bfd"
 
-GREEN       = "#3fb950"   # running text on dark (~5.8:1)
-GREEN_FILL  = "#238636"   # run button fill (white text = 4.6:1)
+GREEN       = "#3fb950"
+GREEN_FILL  = "#238636"
 GREEN_HOVER = "#2ea043"
 
-RED         = "#ff7b72"   # failed text on dark (~6:1)
-RED_FILL    = "#da3633"   # stop/delete fill (white text = 4.5:1)
+RED         = "#ff7b72"
+RED_FILL    = "#da3633"
 RED_HOVER   = "#e5534b"
 
-AMBER       = "#d29922"   # warning
+AMBER       = "#d29922"
 
 STATUS_RUNNING = GREEN
 STATUS_STOPPED = TEXT_SECONDARY
 STATUS_FAILED  = RED
 
-# ── Legacy aliases ───────────────────────────────────────────────────────────
 CYAN                 = ACCENT
 ROSE                 = RED
 ORANGE               = AMBER
@@ -50,7 +46,6 @@ ACCENT_DANGER        = RED
 ACCENT_DANGER_HOVER  = RED_HOVER
 ACCENT_WARNING       = AMBER
 
-# ── App-wide Qt stylesheet ────────────────────────────────────────────────────
 APP_STYLESHEET = f"""
 QMainWindow {{
     background-color: {BG_BASE};
@@ -141,7 +136,6 @@ QStatusBar {{
 }}
 """
 
-# ── Dialog stylesheet ────────────────────────────────────────────────────────
 DIALOG_STYLESHEET = f"""
 QDialog {{
     background-color: {BG_SIDEBAR};
@@ -175,7 +169,6 @@ QDialogButtonBox QPushButton {{
 """
 
 
-# ── Card stylesheet ───────────────────────────────────────────────────────────
 def card_stylesheet() -> str:
     return f"""
     QWidget {{
@@ -207,9 +200,7 @@ def card_stylesheet() -> str:
 """
 
 
-# ── Status badge ─────────────────────────────────────────────────────────────
 def status_badge_stylesheet(color: str) -> str:
-    # Solid dark surface + bright colored text => guaranteed ≥4.5:1 contrast.
     return (
         f"background-color: {BG_ELEVATED};"
         f"color: {color};"
@@ -222,7 +213,6 @@ def status_badge_stylesheet(color: str) -> str:
     )
 
 
-# ── Tag chip ─────────────────────────────────────────────────────────────────
 def tag_chip_stylesheet() -> str:
     return (
         f"background-color: {BG_ELEVATED};"
@@ -234,7 +224,6 @@ def tag_chip_stylesheet() -> str:
     )
 
 
-# ── Sidebar filter button ────────────────────────────────────────────────────
 def sidebar_btn_stylesheet(active: bool = False) -> str:
     if active:
         return (

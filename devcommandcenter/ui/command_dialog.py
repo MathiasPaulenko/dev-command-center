@@ -80,10 +80,8 @@ class CommandDialog(QDialog):
         form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
         form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
 
-        # Labels shared style
         label_style = f"color: {TEXT_SECONDARY}; font-size: 13px; font-weight: 500;"
 
-        # Name
         lbl_name = QLabel("Name *")
         lbl_name.setStyleSheet(label_style)
         self.name_input = QLineEdit()
@@ -91,7 +89,6 @@ class CommandDialog(QDialog):
         self.name_input.setMinimumHeight(38)
         form.addRow(lbl_name, self.name_input)
 
-        # Description
         lbl_desc = QLabel("Description")
         lbl_desc.setStyleSheet(label_style)
         self.desc_input = QTextEdit()
@@ -100,7 +97,6 @@ class CommandDialog(QDialog):
         self.desc_input.setMinimumHeight(60)
         form.addRow(lbl_desc, self.desc_input)
 
-        # Working Directory
         lbl_wd = QLabel("Working Directory")
         lbl_wd.setStyleSheet(label_style)
         wd_row = QHBoxLayout()
@@ -116,7 +112,6 @@ class CommandDialog(QDialog):
         wd_row.addWidget(wd_browse)
         form.addRow(lbl_wd, wd_row)
 
-        # Command (highlighted)
         lbl_cmd = QLabel("Command *")
         lbl_cmd.setStyleSheet(label_style)
         self.command_input = QLineEdit()
@@ -130,7 +125,6 @@ class CommandDialog(QDialog):
         )
         form.addRow(lbl_cmd, self.command_input)
 
-        # Arguments
         lbl_args = QLabel("Arguments (JSON)")
         lbl_args.setStyleSheet(label_style)
         self.args_input = QLineEdit()
@@ -144,7 +138,6 @@ class CommandDialog(QDialog):
         )
         form.addRow(lbl_args, self.args_input)
 
-        # Environment Variables
         lbl_env = QLabel("Environment Variables (JSON)")
         lbl_env.setStyleSheet(label_style)
         self.env_input = QTextEdit()
@@ -160,7 +153,6 @@ class CommandDialog(QDialog):
         )
         form.addRow(lbl_env, self.env_input)
 
-        # Auto-run
         self.auto_run_check = QCheckBox("Auto-run on startup")
         self.auto_run_check.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 13px; spacing: 6px;")
         form.addRow("", self.auto_run_check)
@@ -169,7 +161,6 @@ class CommandDialog(QDialog):
         layout.addStretch()
         root.addWidget(scroll_content, stretch=1)
 
-        # ── Footer buttons ────────────────────────────────────
         footer = QWidget()
         footer.setFixedHeight(72)
         footer.setStyleSheet(
@@ -182,7 +173,6 @@ class CommandDialog(QDialog):
         buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel
         )
-        # Style buttons
         for btn in (
             buttons.button(QDialogButtonBox.StandardButton.Save),
             buttons.button(QDialogButtonBox.StandardButton.Cancel),

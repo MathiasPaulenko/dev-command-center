@@ -54,7 +54,6 @@ class ManagedProcess(QObject):
             self._set_stopped()
             return
         self.process.terminate()
-        # Async force-kill after 3 seconds to keep UI responsive
         QTimer.singleShot(3000, self._force_kill_if_running)
 
     def _force_kill_if_running(self) -> None:
@@ -120,7 +119,6 @@ class ProcessService(QObject):
         cid = str(command_id)
         if cid in self._processes and self._processes[cid].state == ProcessState.RUNNING:
             return False
-        # Clean up old stopped process instance to avoid memory leaks
         if cid in self._processes:
             old = self._processes[cid]
             old.stateChanged.disconnect(self.stateChanged)

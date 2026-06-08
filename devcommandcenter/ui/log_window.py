@@ -161,7 +161,6 @@ class LogWindow(QDialog):
             return
         was_running = self._is_running
         self._is_running = state == "Running"
-        # A fresh run started: drop the previous execution's history.
         if state == "Running" and not was_running:
             self.output.clear()
             ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -206,8 +205,6 @@ class LogWindow(QDialog):
         )
 
     def _load_last_execution(self) -> None:
-        """Show the most recent stored execution so finished runs are reviewable."""
-        # If the process is currently running, the live stream populates the view.
         if self.process_service.get_state(int(self.command_id)) == "Running":
             return
 
@@ -269,8 +266,5 @@ class LogWindow(QDialog):
         self.setWindowTitle(f"{prefix} Logs: {self.command_name}")
 
     def closeEvent(self, event) -> None:
-        # Detach from the shared ProcessService and let QDialog emit `finished`
-        # (via its own closeEvent -> reject) so the owner drops us from its
-        # registry and the window can be reopened later.
         self.disconnect_signals()
         super().closeEvent(event)

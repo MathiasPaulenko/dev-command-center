@@ -128,7 +128,6 @@ class CommandCard(QWidget):
         body_layout.setSpacing(14)
         outer.addWidget(body, stretch=1)
 
-        # ── Name + badge + menu row ───────────────────────────
         top_row = QHBoxLayout()
         top_row.setSpacing(8)
         self.name_label = QLabel(self.command_obj.name)
@@ -155,7 +154,6 @@ class CommandCard(QWidget):
         top_row.addWidget(self.menu_btn)
         body_layout.addLayout(top_row)
 
-        # ── Description ───────────────────────────────────────
         desc = self.command_obj.description or ""
         if desc:
             self.desc_label = QLabel(desc)
@@ -165,7 +163,6 @@ class CommandCard(QWidget):
             self.desc_label.setWordWrap(True)
             body_layout.addWidget(self.desc_label)
 
-        # ── Command chip ──────────────────────────────────────
         cmd = self.command_obj.command or ""
         self.cmd_label = QLabel(
             f"<span style='color:{GREEN};'>$</span> "
@@ -182,7 +179,6 @@ class CommandCard(QWidget):
         self.cmd_label.setWordWrap(True)
         body_layout.addWidget(self.cmd_label)
 
-        # ── Last run info ───────────────────────────────────
         self.last_run_label = QLabel("")
         self.last_run_label.setStyleSheet(
             f"font-size: 11px; color: {TEXT_DISABLED}; font-style: italic;"
@@ -191,13 +187,11 @@ class CommandCard(QWidget):
 
         body_layout.addStretch()
 
-        # ── Divider ───────────────────────────────────────────
         div = QFrame()
         div.setFrameShape(QFrame.Shape.HLine)
         div.setStyleSheet(f"background: {BORDER}; border: none; max-height: 1px; margin: 8px 0;")
         body_layout.addWidget(div)
 
-        # ── Run / Stop ────────────────────────────────────────
         action_row = QHBoxLayout()
         action_row.setSpacing(8)
         self.run_btn = QPushButton("Run")
@@ -269,7 +263,6 @@ class ExecutionHistoryDialog(QDialog):
         root.setSpacing(0)
         root.setContentsMargins(0, 0, 0, 0)
 
-        # Header
         header = QWidget()
         header.setFixedHeight(56)
         header.setStyleSheet(
@@ -286,7 +279,6 @@ class ExecutionHistoryDialog(QDialog):
         header_layout.addStretch()
         root.addWidget(header)
 
-        # Body
         body = QWidget()
         body.setStyleSheet(f"background-color: {BG_BASE};")
         body_layout = QVBoxLayout(body)
@@ -315,7 +307,6 @@ class ExecutionHistoryDialog(QDialog):
 
         root.addWidget(body, stretch=1)
 
-        # Footer
         footer = QWidget()
         footer.setFixedHeight(64)
         footer.setStyleSheet(
@@ -431,7 +422,6 @@ class AboutDialog(QDialog):
         root.setSpacing(0)
         root.setContentsMargins(0, 0, 0, 0)
 
-        # Header with logo and title
         header = QWidget()
         header.setStyleSheet(
             f"background-color: {BG_CARD}; border-bottom: 1px solid {BORDER};"
@@ -441,13 +431,11 @@ class AboutDialog(QDialog):
         header_layout.setSpacing(12)
         header_layout.setContentsMargins(28, 32, 28, 28)
 
-        # Logo
         logo_lbl = QLabel()
         logo_lbl.setPixmap(self._load_logo(80))
         logo_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         header_layout.addWidget(logo_lbl)
 
-        # App name
         name_lbl = QLabel(APP_NAME)
         name_lbl.setStyleSheet(
             f"font-size: 24px; font-weight: 700; color: {TEXT_PRIMARY};"
@@ -456,7 +444,6 @@ class AboutDialog(QDialog):
         name_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         header_layout.addWidget(name_lbl)
 
-        # Version badge
         version_lbl = QLabel(f"v{APP_VERSION}")
         version_lbl.setStyleSheet(
             f"font-size: 12px; font-weight: 600; color: {ACCENT_FILL};"
@@ -468,7 +455,6 @@ class AboutDialog(QDialog):
 
         root.addWidget(header)
 
-        # Body
         body = QWidget()
         body.setStyleSheet(f"background-color: {BG_BASE};")
         body_layout = QVBoxLayout(body)
@@ -488,13 +474,11 @@ class AboutDialog(QDialog):
         desc.setWordWrap(True)
         body_layout.addWidget(desc)
 
-        # Separator
         sep = QFrame()
         sep.setFixedHeight(1)
         sep.setStyleSheet(f"background-color: {BORDER};")
         body_layout.addWidget(sep)
 
-        # Features list
         features = QLabel(
             "<ul style='margin-left: 20px;'>"
             "<li>Save and organize commands as cards</li>"
@@ -512,7 +496,6 @@ class AboutDialog(QDialog):
 
         body_layout.addStretch()
 
-        # Credits
         credits = QLabel("Built with Python 3.12 + PySide6 + SQLite")
         credits.setStyleSheet(
             f"font-size: 12px; color: {TEXT_DISABLED};"
@@ -521,7 +504,6 @@ class AboutDialog(QDialog):
         credits.setAlignment(Qt.AlignmentFlag.AlignCenter)
         body_layout.addWidget(credits)
 
-        # Developer & License
         dev = QLabel("Developed by <b>Mathias Paulenko Echeverz</b>")
         dev.setStyleSheet(
             f"font-size: 12px; color: {TEXT_SECONDARY};"
@@ -538,7 +520,6 @@ class AboutDialog(QDialog):
         license_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         body_layout.addWidget(license_lbl)
 
-        # GitHub link
         link_lbl = QLabel(
             '<a href="https://github.com/MathiasPaulenko/dev-command-center" '
             'style="color:#4493f8;text-decoration:none;">'
@@ -557,7 +538,6 @@ class AboutDialog(QDialog):
 
         root.addWidget(body, stretch=1)
 
-        # Footer
         footer = QWidget()
         footer.setFixedHeight(72)
         footer.setStyleSheet(
@@ -605,7 +585,6 @@ class MainWindow(QMainWindow):
         self._auto_run_commands()
 
     def setup_ui(self) -> None:
-        # ── Menu bar (minimal) ────────────────────────────────
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu("File")
         import_action = file_menu.addAction("Import JSON")
@@ -625,7 +604,6 @@ class MainWindow(QMainWindow):
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(0)
 
-        # ══ SIDEBAR ═══════════════════════════════════════════
         sidebar = QWidget()
         sidebar.setFixedWidth(220)
         sidebar.setStyleSheet(
@@ -636,7 +614,6 @@ class MainWindow(QMainWindow):
         sb_layout.setContentsMargins(16, 24, 16, 20)
         sb_layout.setSpacing(4)
 
-        # Brand
         brand = QLabel("DevCommandCenter")
         brand.setWordWrap(False)
         brand.setStyleSheet(
@@ -651,7 +628,6 @@ class MainWindow(QMainWindow):
         sb_layout.addWidget(accent_line)
         sb_layout.addSpacing(8)
 
-        # Running counter
         sep1 = QFrame()
         sep1.setFrameShape(QFrame.Shape.HLine)
         sep1.setStyleSheet(f"background: {BORDER}; border: none; max-height: 1px; margin: 8px 0;")
@@ -669,7 +645,6 @@ class MainWindow(QMainWindow):
         sep2.setStyleSheet(f"background: {BORDER}; border: none; max-height: 1px; margin: 8px 0;")
         sb_layout.addWidget(sep2)
 
-        # Filter buttons
         filters_lbl = QLabel("FILTER")
         filters_lbl.setStyleSheet(
             f"font-size: 10px; font-weight: 700; color: {TEXT_DISABLED};"
@@ -707,14 +682,12 @@ class MainWindow(QMainWindow):
         sb_layout.addWidget(self.add_btn)
         root.addWidget(sidebar)
 
-        # ══ MAIN AREA ═════════════════════════════════════════
         main_area = QWidget()
         main_area.setStyleSheet(f"background-color: {BG_BASE};")
         main_vbox = QVBoxLayout(main_area)
         main_vbox.setContentsMargins(0, 0, 0, 0)
         main_vbox.setSpacing(0)
 
-        # ── Top bar (search + title) ──────────────────────────
         topbar = QWidget()
         topbar.setFixedHeight(64)
         topbar.setStyleSheet(
@@ -741,7 +714,6 @@ class MainWindow(QMainWindow):
 
         main_vbox.addWidget(topbar)
 
-        # ── Grid scroll area ──────────────────────────────────
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setStyleSheet("background-color: transparent; border: none;")
@@ -756,7 +728,6 @@ class MainWindow(QMainWindow):
         main_vbox.addWidget(self.scroll_area, stretch=1)
         root.addWidget(main_area, stretch=1)
 
-        # ── Status bar ────────────────────────────────────────
         self.status_bar = QStatusBar()
         ver_lbl = QLabel(f"v{APP_VERSION}")
         ver_lbl.setStyleSheet(
@@ -867,7 +838,6 @@ class MainWindow(QMainWindow):
         card.mouseDoubleClickEvent = lambda ev, c=command: self.run_command(c)
         current_state = self.process_service.get_state(command.id)
         card.update_status(current_state)
-        # Load last run timestamp
         session = SessionLocal()
         try:
             last_log = ExecutionLogService(session).get_latest(command.id)

@@ -15,8 +15,7 @@ def test_database():
     init_db()
     session = SessionLocal()
     service = CommandService(session)
-    
-    # Create
+
     cmd = service.create({
         "name": "Test Echo",
         "command": "python",
@@ -25,20 +24,16 @@ def test_database():
     })
     assert cmd.id is not None
     print(f"Created command: {cmd.name}")
-    
-    # Read
+
     all_cmds = service.get_all()
     assert len(all_cmds) >= 1
-    
-    # Update
+
     updated = service.update(cmd.id, {"name": "Updated Echo"})
     assert updated.name == "Updated Echo"
-    
-    # Process service
+
     proc_service = ProcessService()
     assert proc_service.get_state(cmd.id) == "Stopped"
-    
-    # Start a quick command that exits immediately
+
     ok = proc_service.start(
         cmd.id,
         "python",
@@ -49,11 +44,9 @@ def test_database():
     assert ok
     assert proc_service.get_state(cmd.id) == "Running"
 
-    # Wait for the process to finish naturally
     while proc_service.get_state(cmd.id) == "Running":
         app.processEvents()
 
-    # Cleanup
     service.delete(cmd.id)
     session.close()
     
