@@ -252,8 +252,8 @@ class AboutDialog(QDialog):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle(f"About {APP_NAME}")
-        self.resize(440, 520)
-        self.setMinimumSize(400, 460)
+        self.resize(480, 580)
+        self.setMinimumSize(440, 520)
         self.setup_ui()
 
     def setup_ui(self) -> None:
@@ -315,6 +315,7 @@ class AboutDialog(QDialog):
             f"background: transparent; border: none;"
         )
         desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        desc.setWordWrap(True)
         body_layout.addWidget(desc)
 
         # Separator
