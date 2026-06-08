@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "devcommandcenter"
+version = "1.1.0"
+description = "Desktop app for managing and running development commands"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Mathias Paulenko Echeverz"},
+]
+keywords = ["developer-tools", "qt", "pyside6", "command-runner", "productivity"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: Utilities",
+]
+requires-python = ">=3.12"
+dependencies = [
+    "PySide6>=6.6.0",
+    "SQLAlchemy>=2.0.0",
+]
+
+[project.scripts]
+devcommandcenter = "devcommandcenter.cli:main"
+dcc = "devcommandcenter.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/MathiasPaulenko/dev-command-center"
+Repository = "https://github.com/MathiasPaulenko/dev-command-center"
+Issues = "https://github.com/MathiasPaulenko/dev-command-center/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["devcommandcenter*"]
+
+[tool.setuptools.package-data]
+devcommandcenter = ["assets/*"]
