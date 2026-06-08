@@ -250,6 +250,9 @@ class MainWindow(QMainWindow):
         right_layout.setContentsMargins(16, 16, 16, 16)
         right_layout.setSpacing(12)
 
+        self.logs_area = QTextEdit()
+        self.logs_area.setReadOnly(True)
+
         log_header = QHBoxLayout()
         log_label = QLabel("Logs")
         log_label.setStyleSheet(
