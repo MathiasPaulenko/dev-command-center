@@ -21,6 +21,7 @@ from devcommandcenter.ui.theme import (
     BG_ELEVATED,
     BG_INPUT,
     BORDER,
+    BORDER_HOVER,
     RED_FILL,
     RED_HOVER,
     STATUS_FAILED,

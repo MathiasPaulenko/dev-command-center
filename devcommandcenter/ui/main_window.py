@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QSizePolicy,
     QStatusBar,
+    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
