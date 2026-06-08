@@ -9,7 +9,6 @@ from PySide6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QMainWindow,
-    QMenu,
     QMessageBox,
     QPushButton,
     QSplitter,
@@ -153,7 +152,6 @@ class MainWindow(QMainWindow):
         splitter = QSplitter(Qt.Orientation.Horizontal)
         layout.addWidget(splitter)
 
-        # Left panel: commands
         left_widget = QWidget()
         left_layout = QVBoxLayout(left_widget)
         left_layout.setContentsMargins(12, 12, 12, 12)
@@ -188,7 +186,6 @@ class MainWindow(QMainWindow):
         left_layout.addWidget(self.list_widget, stretch=1)
         splitter.addWidget(left_widget)
 
-        # Right panel: logs
         right_widget = QWidget()
         right_layout = QVBoxLayout(right_widget)
         right_layout.setContentsMargins(12, 12, 12, 12)

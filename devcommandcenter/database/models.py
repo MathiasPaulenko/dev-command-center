@@ -1,11 +1,8 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import JSON, DateTime, Integer, String, Text, create_engine
+from sqlalchemy import JSON, DateTime, Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-
-from devcommandcenter.config import DATABASE_URL
-
 
 class Base(DeclarativeBase):
     pass
