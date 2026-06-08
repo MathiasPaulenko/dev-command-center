@@ -1,3 +1,4 @@
+import json
 from typing import Optional
 
 from PySide6.QtWidgets import (
@@ -161,14 +162,12 @@ class CommandDialog(QDialog):
         self.desc_input.setText(command.description or "")
         self.wd_input.setText(command.working_directory or "")
         self.command_input.setText(command.command or "")
-        import json
         self.args_input.setText(json.dumps(command.arguments) if command.arguments else "")
         self.env_input.setText(json.dumps(command.env_vars) if command.env_vars else "")
         self.auto_run_check.setChecked(command.auto_run or False)
         self.tags_editor.set_tags(command.tags or [])
 
     def get_data(self) -> dict:
-        import json
         data = {
             "name": self.name_input.text().strip(),
             "description": self.desc_input.text().strip() or None,
@@ -197,7 +196,6 @@ class CommandDialog(QDialog):
         if not self.name_input.text().strip() or not self.command_input.text().strip():
             QMessageBox.warning(self, "Validation", "Name and Command are required.")
             return
-        import json
         args_text = self.args_input.text().strip()
         if args_text:
             try:

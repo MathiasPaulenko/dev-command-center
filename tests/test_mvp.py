@@ -40,27 +40,19 @@ def test_database():
     
     # Start a quick command that exits immediately
     ok = proc_service.start(
-        cmd.id, 
-        "python", 
+        cmd.id,
+        "python",
         ["-c", "print('ok')"],
         os.getcwd(),
         {}
     )
     assert ok
     assert proc_service.get_state(cmd.id) == "Running"
-    
-    # Process events to let QProcess emit finished
-    for _ in range(10):
+
+    # Wait for the process to finish naturally
+    while proc_service.get_state(cmd.id) == "Running":
         app.processEvents()
-    
-    # Stop all and clean up
-    proc_service.stop_all()
-    
-    # Process events for timers (kill timeout)
-    for _ in range(5):
-        QTimer.singleShot(1, lambda: None)
-        app.processEvents()
-    
+
     # Cleanup
     service.delete(cmd.id)
     session.close()

@@ -89,10 +89,20 @@ class ManagedProcess(QObject):
             "".join(self._stderr_buffer),
             exit_code,
         )
+        self._stdout_buffer.clear()
+        self._stderr_buffer.clear()
 
     def _on_error(self, error: QProcess.ProcessError) -> None:
         self.state = ProcessState.FAILED
         self.stateChanged.emit(self.command_id, self.state.value)
+        self.logReady.emit(
+            self.command_id,
+            "".join(self._stdout_buffer),
+            "".join(self._stderr_buffer),
+            -1,
+        )
+        self._stdout_buffer.clear()
+        self._stderr_buffer.clear()
 
 
 class ProcessService(QObject):
@@ -110,6 +120,14 @@ class ProcessService(QObject):
         cid = str(command_id)
         if cid in self._processes and self._processes[cid].state == ProcessState.RUNNING:
             return False
+        # Clean up old stopped process instance to avoid memory leaks
+        if cid in self._processes:
+            old = self._processes[cid]
+            old.stateChanged.disconnect(self.stateChanged)
+            old.outputReady.disconnect(self.outputReady)
+            old.errorReady.disconnect(self.errorReady)
+            old.logReady.disconnect(self.logReady)
+            del self._processes[cid]
 
         proc = ManagedProcess(command_id, command, arguments, working_directory, env_vars)
         proc.stateChanged.connect(self.stateChanged)

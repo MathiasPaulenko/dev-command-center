@@ -1,4 +1,7 @@
-from PySide6.QtCore import Qt, Slot
+import json
+from datetime import datetime
+
+from PySide6.QtCore import QCoreApplication, Qt, Slot
 from PySide6.QtWidgets import (
     QApplication,
     QDialog,
@@ -18,9 +21,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from devcommandcenter.config import APP_NAME, APP_VERSION
 from devcommandcenter.database.connection import SessionLocal, init_db
 from devcommandcenter.database.models import Command
 from devcommandcenter.services.command_service import CommandService
+from devcommandcenter.services.execution_log_service import ExecutionLogService
 from devcommandcenter.services.process_service import ProcessService
 from devcommandcenter.ui.command_dialog import CommandDialog
 
@@ -311,7 +316,6 @@ class MainWindow(QMainWindow):
             self._append_log(f'<span style="color:#f44336">[{name}] {line}</span>')
 
     def _append_log(self, message: str) -> None:
-        from datetime import datetime
         ts = datetime.now().strftime("%H:%M:%S")
         self.logs_area.append(f"[{ts}] {message}")
         sb = self.logs_area.verticalScrollBar()
@@ -328,7 +332,6 @@ class MainWindow(QMainWindow):
 
     @Slot(str, str, str, int)
     def on_log_ready(self, command_id: str, stdout: str, stderr: str, exit_code: int) -> None:
-        from devcommandcenter.services.execution_log_service import ExecutionLogService
         session = SessionLocal()
         try:
             service = ExecutionLogService(session)
@@ -372,7 +375,6 @@ class MainWindow(QMainWindow):
                 session.close()
 
     def show_logs_for_command(self, command: Command) -> None:
-        from devcommandcenter.services.execution_log_service import ExecutionLogService
         session = SessionLocal()
         try:
             service = ExecutionLogService(session)
@@ -438,7 +440,6 @@ class MainWindow(QMainWindow):
                 session.close()
 
     def import_commands(self) -> None:
-        import json
         path, _ = QFileDialog.getOpenFileName(self, "Import Commands", "", "JSON (*.json)")
         if not path:
             return
@@ -461,7 +462,6 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Import Error", str(e))
 
     def export_commands(self) -> None:
-        import json
         path, _ = QFileDialog.getSaveFileName(self, "Export Commands", "commands.json", "JSON (*.json)")
         if not path:
             return
@@ -492,7 +492,6 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Export Error", str(e))
 
     def show_about(self) -> None:
-        from devcommandcenter.config import APP_NAME, APP_VERSION
         QMessageBox.about(
             self,
             f"About {APP_NAME}",
@@ -503,4 +502,6 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event) -> None:
         self.process_service.stop_all()
+        for _ in range(20):
+            QCoreApplication.processEvents()
         event.accept()
