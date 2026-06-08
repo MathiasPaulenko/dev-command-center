@@ -15,6 +15,8 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QListWidget,
+    QListWidgetItem,
     QMainWindow,
     QMessageBox,
     QPushButton,
@@ -27,7 +29,23 @@ from PySide6.QtWidgets import (
 
 from devcommandcenter.config import APP_NAME, APP_VERSION
 from devcommandcenter.database.connection import SessionLocal, init_db
-from devcommandcenter.database.models import Command
+from devcommandcenter.database.models import Command, ExecutionLog
+
+
+def _relative_time(dt: datetime | None) -> str:
+    if dt is None:
+        return "never"
+    delta = datetime.now() - dt
+    if delta.days > 0:
+        return f"{delta.days}d ago"
+    mins = delta.seconds // 60
+    if mins >= 60:
+        return f"{mins // 60}h ago"
+    if mins > 0:
+        return f"{mins}m ago"
+    return "just now"
+
+
 from devcommandcenter.services.command_service import CommandService
 from devcommandcenter.services.execution_log_service import ExecutionLogService
 from devcommandcenter.services.process_service import ProcessService
@@ -166,6 +184,13 @@ class CommandCard(QWidget):
             tags_row.addStretch()
             body_layout.addLayout(tags_row)
 
+        # ── Last run info ───────────────────────────────────
+        self.last_run_label = QLabel("")
+        self.last_run_label.setStyleSheet(
+            f"font-size: 11px; color: {TEXT_DISABLED}; font-style: italic;"
+        )
+        body_layout.addWidget(self.last_run_label)
+
         body_layout.addStretch()
 
         # ── Divider ───────────────────────────────────────────
@@ -178,19 +203,19 @@ class CommandCard(QWidget):
         action_row = QHBoxLayout()
         action_row.setSpacing(8)
         self.run_btn = QPushButton("Run")
-        self.run_btn.setMinimumHeight(38)
+        self.run_btn.setMinimumHeight(36)
         self.run_btn.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
         self.run_btn.setStyleSheet(
             f"QPushButton {{ background-color: {GREEN_FILL}; color: #ffffff;"
             f"border: none; border-radius: 8px;"
-            f"padding: 9px 0; font-size: 13px; font-weight: 600; }}"
+            f"padding: 8px 0; font-size: 13px; font-weight: 600; }}"
             f"QPushButton:hover {{ background-color: {GREEN_HOVER}; }}"
             f"QPushButton:disabled {{ background-color: {BG_ELEVATED}; color: {TEXT_DISABLED}; }}"
         )
         self.stop_btn = QPushButton("Stop")
-        self.stop_btn.setMinimumHeight(38)
+        self.stop_btn.setMinimumHeight(36)
         self.stop_btn.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
@@ -198,7 +223,7 @@ class CommandCard(QWidget):
         self.stop_btn.setStyleSheet(
             f"QPushButton {{ background-color: {RED_FILL}; color: #ffffff;"
             f"border: none; border-radius: 8px;"
-            f"padding: 9px 0; font-size: 13px; font-weight: 600; }}"
+            f"padding: 8px 0; font-size: 13px; font-weight: 600; }}"
             f"QPushButton:hover {{ background-color: {RED_HOVER}; }}"
             f"QPushButton:disabled {{ background-color: {BG_ELEVATED}; color: {TEXT_DISABLED}; }}"
         )
@@ -206,27 +231,51 @@ class CommandCard(QWidget):
         action_row.addWidget(self.stop_btn)
         body_layout.addLayout(action_row)
 
-        # ── Secondary buttons ─────────────────────────────────
-        sec_row = QHBoxLayout()
-        sec_row.setSpacing(6)
+        # ── Secondary buttons (2 rows of 2) ───────────────────
+        sec_style = (
+            f"QPushButton {{ background-color: {BG_ELEVATED}; color: {TEXT_SECONDARY};"
+            f"border: 1px solid {BORDER}; border-radius: 6px;"
+            f"padding: 5px 10px; font-size: 11px; font-weight: 500; }}"
+            f"QPushButton:hover {{ background-color: {BG_INPUT}; color: {TEXT_PRIMARY};"
+            f"border-color: {BORDER_HOVER}; }}"
+        )
+
+        sec_row1 = QHBoxLayout()
+        sec_row1.setSpacing(6)
         self.logs_btn = QPushButton("Logs")
-        self.logs_btn.setMinimumHeight(32)
+        self.logs_btn.setMinimumHeight(30)
+        self.history_btn = QPushButton("History")
+        self.history_btn.setMinimumHeight(30)
+        self.logs_btn.setStyleSheet(sec_style)
+        self.history_btn.setStyleSheet(sec_style)
+        for b in (self.logs_btn, self.history_btn):
+            b.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        sec_row1.addWidget(self.logs_btn)
+        sec_row1.addWidget(self.history_btn)
+        body_layout.addLayout(sec_row1)
+
+        sec_row2 = QHBoxLayout()
+        sec_row2.setSpacing(6)
         self.edit_btn = QPushButton("Edit")
-        self.edit_btn.setMinimumHeight(32)
+        self.edit_btn.setMinimumHeight(30)
+        self.duplicate_btn = QPushButton("Duplicate")
+        self.duplicate_btn.setMinimumHeight(30)
         self.delete_btn = QPushButton("Delete")
-        self.delete_btn.setMinimumHeight(32)
+        self.delete_btn.setMinimumHeight(30)
+        self.edit_btn.setStyleSheet(sec_style)
+        self.duplicate_btn.setStyleSheet(sec_style)
         self.delete_btn.setStyleSheet(
             f"QPushButton {{ background-color: {BG_ELEVATED}; color: {RED};"
-            f"border: 1px solid {BORDER}; border-radius: 7px;"
-            f"padding: 6px 14px; font-size: 12px; font-weight: 500; }}"
+            f"border: 1px solid {BORDER}; border-radius: 6px;"
+            f"padding: 5px 10px; font-size: 11px; font-weight: 500; }}"
             f"QPushButton:hover {{ background-color: {RED_FILL}; color: #ffffff; border-color: {RED_FILL}; }}"
         )
-        for b in (self.logs_btn, self.edit_btn, self.delete_btn):
+        for b in (self.edit_btn, self.duplicate_btn, self.delete_btn):
             b.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        sec_row.addWidget(self.logs_btn)
-        sec_row.addWidget(self.edit_btn)
-        sec_row.addWidget(self.delete_btn)
-        body_layout.addLayout(sec_row)
+        sec_row2.addWidget(self.edit_btn)
+        sec_row2.addWidget(self.duplicate_btn)
+        sec_row2.addWidget(self.delete_btn)
+        body_layout.addLayout(sec_row2)
 
         self.setFixedSize(320, 300)
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
@@ -246,6 +295,138 @@ class CommandCard(QWidget):
         )
         self.run_btn.setEnabled(state != "Running")
         self.stop_btn.setEnabled(state == "Running")
+
+    def set_last_run(self, dt: datetime | None) -> None:
+        text = _relative_time(dt) if dt else "never run"
+        self.last_run_label.setText(f"Last run: {text}")
+
+
+class ExecutionHistoryDialog(QDialog):
+    def __init__(self, command: Command, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setWindowTitle(f"Execution History: {command.name}")
+        self.resize(700, 500)
+        self.setup_ui()
+        self._load_history(command.id)
+
+    def setup_ui(self) -> None:
+        root = QVBoxLayout(self)
+        root.setSpacing(0)
+        root.setContentsMargins(0, 0, 0, 0)
+
+        # Header
+        header = QWidget()
+        header.setFixedHeight(56)
+        header.setStyleSheet(
+            f"background-color: {BG_CARD}; border-bottom: 1px solid {BORDER};"
+        )
+        header_layout = QHBoxLayout(header)
+        header_layout.setContentsMargins(20, 0, 20, 0)
+        title = QLabel(self.windowTitle())
+        title.setStyleSheet(
+            f"font-size: 16px; font-weight: 700; color: {TEXT_PRIMARY};"
+            f"background: transparent; border: none;"
+        )
+        header_layout.addWidget(title)
+        header_layout.addStretch()
+        root.addWidget(header)
+
+        # Body
+        body = QWidget()
+        body.setStyleSheet(f"background-color: {BG_BASE};")
+        body_layout = QVBoxLayout(body)
+        body_layout.setContentsMargins(20, 16, 20, 16)
+        body_layout.setSpacing(12)
+
+        self.list_widget = QListWidget()
+        self.list_widget.setStyleSheet(
+            f"QListWidget {{ background-color: {BG_INPUT}; color: {TEXT_PRIMARY};"
+            f"border: 1px solid {BORDER}; border-radius: 8px; }}"
+            f"QListWidget::item {{ padding: 10px; border-bottom: 1px solid {BORDER}; }}"
+            f"QListWidget::item:selected {{ background-color: {BG_ELEVATED}; }}"
+        )
+        self.list_widget.itemClicked.connect(self._on_item_clicked)
+        body_layout.addWidget(self.list_widget)
+
+        self.detail = QTextEdit()
+        self.detail.setReadOnly(True)
+        self.detail.setMaximumHeight(160)
+        self.detail.setStyleSheet(
+            f"QTextEdit {{ background-color: {BG_CODE}; color: {TEXT_PRIMARY};"
+            f"border: 1px solid {BORDER}; border-radius: 8px; padding: 12px;"
+            f"font-family: 'JetBrains Mono','Consolas',monospace; font-size: 12px; }}"
+        )
+        body_layout.addWidget(self.detail)
+
+        root.addWidget(body, stretch=1)
+
+        # Footer
+        footer = QWidget()
+        footer.setFixedHeight(64)
+        footer.setStyleSheet(
+            f"background-color: {BG_CARD}; border-top: 1px solid {BORDER};"
+        )
+        footer_layout = QHBoxLayout(footer)
+        footer_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        footer_layout.setContentsMargins(20, 0, 20, 0)
+        close_btn = QPushButton("Close")
+        close_btn.setMinimumHeight(36)
+        close_btn.setMinimumWidth(100)
+        close_btn.clicked.connect(self.accept)
+        footer_layout.addWidget(close_btn)
+        root.addWidget(footer)
+
+    def _load_history(self, command_id: int) -> None:
+        session = SessionLocal()
+        try:
+            logs = ExecutionLogService(session).get_by_command_id(command_id)
+        finally:
+            session.close()
+
+        if not logs:
+            self.list_widget.addItem("No executions recorded yet.")
+            return
+
+        for log in logs:
+            started = log.started_at.strftime("%Y-%m-%d %H:%M:%S") if log.started_at else "?"
+            finished = log.finished_at.strftime("%Y-%m-%d %H:%M:%S") if log.finished_at else "?"
+            if log.exit_code == 0:
+                status = "Success"
+                status_color = GREEN
+            elif log.exit_code is None:
+                status = "Unknown"
+                status_color = TEXT_SECONDARY
+            else:
+                status = f"Failed (exit {log.exit_code})"
+                status_color = RED
+            item = QListWidgetItem(f"{started}  —  {status}")
+            item.setData(Qt.ItemDataRole.UserRole, log)
+            self.list_widget.addItem(item)
+
+        if self.list_widget.count() > 0:
+            self.list_widget.setCurrentRow(0)
+            self._on_item_clicked(self.list_widget.item(0))
+
+    def _on_item_clicked(self, item: QListWidgetItem) -> None:
+        log = item.data(Qt.ItemDataRole.UserRole)
+        if not isinstance(log, ExecutionLog):
+            return
+        parts: list[str] = []
+        started = log.started_at.strftime("%Y-%m-%d %H:%M:%S") if log.started_at else "?"
+        finished = log.finished_at.strftime("%Y-%m-%d %H:%M:%S") if log.finished_at else "?"
+        parts.append(f"Started:  {started}")
+        parts.append(f"Finished: {finished}")
+        parts.append(f"Exit code: {log.exit_code}")
+        parts.append("")
+        if log.output:
+            parts.append("STDOUT:")
+            parts.append(log.output)
+        if log.error:
+            parts.append("STDERR:")
+            parts.append(log.error)
+        if not log.output and not log.error:
+            parts.append("(no output captured)")
+        self.detail.setPlainText("\n".join(parts))
 
 
 class AboutDialog(QDialog):
@@ -688,11 +869,20 @@ class MainWindow(QMainWindow):
         card.run_btn.clicked.connect(lambda _, c=command: self.run_command(c))
         card.stop_btn.clicked.connect(lambda _, c=command: self.stop_command(c))
         card.logs_btn.clicked.connect(lambda _, c=command: self.show_logs_for_command(c))
+        card.history_btn.clicked.connect(lambda _, c=command: self.show_history_for_command(c))
         card.edit_btn.clicked.connect(lambda _, c=command: self.edit_command(c))
+        card.duplicate_btn.clicked.connect(lambda _, c=command: self.duplicate_command(c))
         card.delete_btn.clicked.connect(lambda _, c=command: self.delete_command(c))
         card.mouseDoubleClickEvent = lambda ev, c=command: self.run_command(c)
         current_state = self.process_service.get_state(command.id)
         card.update_status(current_state)
+        # Load last run timestamp
+        session = SessionLocal()
+        try:
+            last_log = ExecutionLogService(session).get_latest(command.id)
+            card.set_last_run(last_log.finished_at if last_log else None)
+        finally:
+            session.close()
         self._cards[command.id] = card
 
     def run_command(self, command: Command) -> None:
@@ -743,11 +933,12 @@ class MainWindow(QMainWindow):
 
     @Slot(str, str, str, int)
     def on_log_ready(self, command_id: str, stdout: str, stderr: str, exit_code: int) -> None:
+        cid = int(command_id)
         session = SessionLocal()
         try:
             service = ExecutionLogService(session)
             service.create({
-                "command_id": int(command_id),
+                "command_id": cid,
                 "output": stdout or None,
                 "error": stderr or None,
                 "exit_code": exit_code,
@@ -755,6 +946,10 @@ class MainWindow(QMainWindow):
             })
         finally:
             session.close()
+        # Refresh last-run timestamp on the card
+        card = self._cards.get(cid)
+        if card:
+            card.set_last_run(datetime.utcnow())
 
     def update_card_status(self, command_id: int, state: str) -> None:
         card = self._cards.get(command_id)
@@ -802,6 +997,29 @@ class MainWindow(QMainWindow):
         win.show()
         win.raise_()
         win.activateWindow()
+
+    def show_history_for_command(self, command: Command) -> None:
+        dlg = ExecutionHistoryDialog(command, self)
+        dlg.exec()
+
+    def duplicate_command(self, command: Command) -> None:
+        data = {
+            "name": f"{command.name} (copy)",
+            "description": command.description,
+            "working_directory": command.working_directory,
+            "command": command.command,
+            "arguments": list(command.arguments) if command.arguments else [],
+            "env_vars": dict(command.env_vars) if command.env_vars else {},
+            "auto_run": False,
+            "tags": list(command.tags) if command.tags else [],
+        }
+        session = SessionLocal()
+        try:
+            service = CommandService(session)
+            service.create(data)
+            self.load_commands()
+        finally:
+            session.close()
 
     def _auto_run_commands(self) -> None:
         for cmd in getattr(self, "_all_commands", []):
