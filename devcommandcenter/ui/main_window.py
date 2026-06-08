@@ -472,7 +472,12 @@ class MainWindow(QMainWindow):
 
         # Fixed card width (320) + grid spacing (16)
         CARD_W = 320 + 16
-        avail = self.scroll_area.viewport().width() - 56  # minus content margins
+        # Viewport width may be 0 before the window is shown; fall back to the
+        # main window width minus the sidebar so the first paint already flows.
+        vp = self.scroll_area.viewport().width()
+        if vp <= 1:
+            vp = max(self.width() - 220, CARD_W)
+        avail = vp - 56  # minus grid content margins
         cols = max(1, avail // CARD_W)
 
         visible_cards = [
@@ -487,13 +492,19 @@ class MainWindow(QMainWindow):
                 card, row, col, Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft
             )
 
-        # Keep cards left-aligned; trailing column absorbs extra space
-        for i in range(cols):
+        # Keep cards packed left; trailing column absorbs the extra space
+        last = max(cols, 1)
+        for i in range(last):
             self.grid_layout.setColumnStretch(i, 0)
-        self.grid_layout.setColumnStretch(cols, 1)
+        self.grid_layout.setColumnStretch(last, 1)
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
+        if hasattr(self, "_cards") and self._cards:
+            self._relayout_grid()
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
         if hasattr(self, "_cards") and self._cards:
             self._relayout_grid()
 

@@ -209,15 +209,16 @@ def card_stylesheet() -> str:
 
 # ── Status badge ─────────────────────────────────────────────────────────────
 def status_badge_stylesheet(color: str) -> str:
+    # Solid dark surface + bright colored text => guaranteed ≥4.5:1 contrast.
     return (
-        f"background-color: {color}1a;"
+        f"background-color: {BG_ELEVATED};"
         f"color: {color};"
-        f"border: 1px solid {color}40;"
+        f"border: 1px solid {color};"
         f"border-radius: 20px;"
-        f"padding: 3px 14px;"
+        f"padding: 4px 14px;"
         f"font-size: 11px;"
-        f"font-weight: 600;"
-        f"letter-spacing: 0.8px;"
+        f"font-weight: 700;"
+        f"letter-spacing: 0.5px;"
     )
 
 
