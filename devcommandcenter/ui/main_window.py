@@ -28,6 +28,28 @@ from devcommandcenter.services.command_service import CommandService
 from devcommandcenter.services.execution_log_service import ExecutionLogService
 from devcommandcenter.services.process_service import ProcessService
 from devcommandcenter.ui.command_dialog import CommandDialog
+from devcommandcenter.ui.theme import (
+    ACCENT_DANGER,
+    ACCENT_DANGER_HOVER,
+    ACCENT_PRIMARY,
+    ACCENT_PRIMARY_HOVER,
+    ACCENT_SUCCESS,
+    APP_STYLESHEET,
+    BG_ELEVATED,
+    BG_INPUT,
+    BG_PRIMARY,
+    BORDER,
+    BORDER_HOVER,
+    DIALOG_STYLESHEET,
+    STATUS_FAILED,
+    STATUS_RUNNING,
+    STATUS_STOPPED,
+    TEXT_DISABLED,
+    TEXT_PRIMARY,
+    TEXT_SECONDARY,
+    card_stylesheet,
+    status_badge_stylesheet,
+)
 
 
 class CommandCard(QWidget):
@@ -39,79 +61,106 @@ class CommandCard(QWidget):
 
     def setup_ui(self) -> None:
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(12, 8, 12, 8)
-        layout.setSpacing(12)
+        layout.setContentsMargins(16, 12, 16, 12)
+        layout.setSpacing(14)
 
         info_layout = QVBoxLayout()
+        info_layout.setSpacing(4)
+
+        top_row = QHBoxLayout()
         self.name_label = QLabel(f"<b>{self.command_obj.name}</b>")
-        self.name_label.setStyleSheet("font-size: 14px;")
-        self.desc_label = QLabel(self.command_obj.description or "")
-        self.desc_label.setStyleSheet("color: #888; font-size: 12px;")
-        self.status_label = QLabel("Stopped")
-        self.status_label.setStyleSheet(
-            "color: #888; font-size: 11px; font-weight: bold;"
+        self.name_label.setStyleSheet(
+            f"font-size: 15px; color: {TEXT_PRIMARY}; background: transparent; border: none;"
         )
-        info_layout.addWidget(self.name_label)
+        self.status_badge = QLabel("Stopped")
+        self.status_badge.setStyleSheet(status_badge_stylesheet(STATUS_STOPPED))
+        top_row.addWidget(self.name_label)
+        top_row.addStretch()
+        top_row.addWidget(self.status_badge)
+        info_layout.addLayout(top_row)
+
+        desc_text = self.command_obj.description or "No description"
+        self.desc_label = QLabel(desc_text)
+        self.desc_label.setStyleSheet(
+            f"color: {TEXT_SECONDARY}; font-size: 12px; background: transparent; border: none;"
+        )
+        self.desc_label.setWordWrap(True)
         info_layout.addWidget(self.desc_label)
-        info_layout.addWidget(self.status_label)
+
+        tags_text = ", ".join(self.command_obj.tags or [])
+        self.tags_label = QLabel(tags_text)
+        self.tags_label.setStyleSheet(
+            f"color: {TEXT_DISABLED}; font-size: 11px; background: transparent; border: none;"
+        )
+        info_layout.addWidget(self.tags_label)
+
         layout.addLayout(info_layout, stretch=1)
 
-        self.run_btn = QPushButton("Run")
-        self.run_btn.setFixedWidth(60)
-        self.stop_btn = QPushButton("Stop")
-        self.stop_btn.setFixedWidth(60)
-        self.stop_btn.setEnabled(False)
-        self.logs_btn = QPushButton("Logs")
-        self.logs_btn.setFixedWidth(60)
-        self.edit_btn = QPushButton("Edit")
-        self.edit_btn.setFixedWidth(60)
-        self.delete_btn = QPushButton("Delete")
-        self.delete_btn.setFixedWidth(60)
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(6)
 
-        layout.addWidget(self.run_btn)
-        layout.addWidget(self.stop_btn)
-        layout.addWidget(self.logs_btn)
-        layout.addWidget(self.edit_btn)
-        layout.addWidget(self.delete_btn)
-
-        self.setStyleSheet(
-            """
-            QWidget {
-                background-color: #2b2b2b;
-                border-radius: 8px;
-            }
-            QLabel {
-                background: transparent;
-            }
-            QPushButton {
-                background-color: #3c3c3c;
-                color: #ddd;
+        self.run_btn = QPushButton("▶ Run")
+        self.run_btn.setFixedWidth(70)
+        self.run_btn.setStyleSheet(
+            f"""
+            QPushButton {{
+                background-color: {ACCENT_SUCCESS};
+                color: #ffffff;
                 border: none;
-                border-radius: 4px;
-                padding: 6px 10px;
+                border-radius: 6px;
+                padding: 5px 10px;
                 font-size: 12px;
-            }
-            QPushButton:hover {
-                background-color: #505050;
-            }
-            QPushButton:pressed {
-                background-color: #606060;
-            }
-            QPushButton:disabled {
-                color: #666;
-            }
+                font-weight: bold;
+            }}
+            QPushButton:hover {{ background-color: {ACCENT_PRIMARY_HOVER}; }}
+            QPushButton:disabled {{ background-color: {BG_INPUT}; color: {TEXT_DISABLED}; }}
         """
         )
 
+        self.stop_btn = QPushButton("⏹ Stop")
+        self.stop_btn.setFixedWidth(70)
+        self.stop_btn.setEnabled(False)
+        self.stop_btn.setStyleSheet(
+            f"""
+            QPushButton {{
+                background-color: {ACCENT_DANGER};
+                color: #ffffff;
+                border: none;
+                border-radius: 6px;
+                padding: 5px 10px;
+                font-size: 12px;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{ background-color: {ACCENT_DANGER_HOVER}; }}
+            QPushButton:disabled {{ background-color: {BG_INPUT}; color: {TEXT_DISABLED}; }}
+        """
+        )
+
+        self.logs_btn = QPushButton("Logs")
+        self.logs_btn.setFixedWidth(55)
+        self.edit_btn = QPushButton("Edit")
+        self.edit_btn.setFixedWidth(55)
+        self.delete_btn = QPushButton("Del")
+        self.delete_btn.setFixedWidth(45)
+
+        btn_layout.addWidget(self.run_btn)
+        btn_layout.addWidget(self.stop_btn)
+        btn_layout.addWidget(self.logs_btn)
+        btn_layout.addWidget(self.edit_btn)
+        btn_layout.addWidget(self.delete_btn)
+        layout.addLayout(btn_layout)
+
+        self.setStyleSheet(card_stylesheet())
+
     def update_status(self, state: str) -> None:
-        self.status_label.setText(state)
+        self.status_badge.setText(state)
         color_map = {
-            "Running": "#4caf50",
-            "Stopped": "#888",
-            "Failed": "#f44336",
+            "Running": STATUS_RUNNING,
+            "Stopped": STATUS_STOPPED,
+            "Failed": STATUS_FAILED,
         }
-        self.status_label.setStyleSheet(
-            f"color: {color_map.get(state, '#888')}; font-size: 11px; font-weight: bold;"
+        self.status_badge.setStyleSheet(
+            status_badge_stylesheet(color_map.get(state, STATUS_STOPPED))
         )
         self.run_btn.setEnabled(state != "Running")
         self.stop_btn.setEnabled(state == "Running")
@@ -159,13 +208,30 @@ class MainWindow(QMainWindow):
 
         left_widget = QWidget()
         left_layout = QVBoxLayout(left_widget)
-        left_layout.setContentsMargins(12, 12, 12, 12)
-        left_layout.setSpacing(8)
+        left_layout.setContentsMargins(16, 16, 16, 16)
+        left_layout.setSpacing(12)
 
         header = QHBoxLayout()
-        header.addWidget(QLabel("<h2>Commands</h2>"))
+        header_label = QLabel("Commands")
+        header_label.setStyleSheet(
+            f"font-size: 18px; font-weight: bold; color: {TEXT_PRIMARY};"
+        )
+        header.addWidget(header_label)
         header.addStretch()
         self.add_btn = QPushButton("+ New Command")
+        self.add_btn.setStyleSheet(
+            f"""
+            QPushButton {{
+                background-color: {ACCENT_PRIMARY};
+                color: #ffffff;
+                border: none;
+                border-radius: 6px;
+                padding: 6px 14px;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{ background-color: {ACCENT_PRIMARY_HOVER}; }}
+        """
+        )
         header.addWidget(self.add_btn)
         left_layout.addLayout(header)
 
@@ -176,41 +242,20 @@ class MainWindow(QMainWindow):
 
         self.list_widget = QListWidget()
         self.list_widget.setSpacing(8)
-        self.list_widget.setStyleSheet(
-            """
-            QListWidget {
-                background-color: #1e1e1e;
-                border: none;
-            }
-            QListWidget::item {
-                background: transparent;
-                padding: 4px;
-            }
-        """
-        )
         left_layout.addWidget(self.list_widget, stretch=1)
         splitter.addWidget(left_widget)
 
         right_widget = QWidget()
         right_layout = QVBoxLayout(right_widget)
-        right_layout.setContentsMargins(12, 12, 12, 12)
-        right_layout.setSpacing(8)
-        self.logs_area = QTextEdit()
-        self.logs_area.setReadOnly(True)
-        self.logs_area.setStyleSheet(
-            """
-            QTextEdit {
-                background-color: #1e1e1e;
-                color: #ccc;
-                font-family: Consolas, monospace;
-                font-size: 12px;
-                border: 1px solid #333;
-                border-radius: 6px;
-            }
-        """
-        )
+        right_layout.setContentsMargins(16, 16, 16, 16)
+        right_layout.setSpacing(12)
+
         log_header = QHBoxLayout()
-        log_header.addWidget(QLabel("<h2>Logs</h2>"))
+        log_label = QLabel("Logs")
+        log_label.setStyleSheet(
+            f"font-size: 18px; font-weight: bold; color: {TEXT_PRIMARY};"
+        )
+        log_header.addWidget(log_label)
         log_header.addStretch()
         self.clear_logs_btn = QPushButton("Clear")
         self.clear_logs_btn.setFixedWidth(60)
@@ -221,7 +266,7 @@ class MainWindow(QMainWindow):
         splitter.addWidget(right_widget)
         splitter.setSizes([600, 300])
 
-        self.setStyleSheet("background-color: #1e1e1e; color: #ddd;")
+        self.setStyleSheet(APP_STYLESHEET)
         self.add_btn.clicked.connect(self.open_create_dialog)
 
         self.status_bar = QStatusBar()
@@ -380,11 +425,19 @@ class MainWindow(QMainWindow):
             service = ExecutionLogService(session)
             logs = service.get_by_command_id(command.id)
             dialog = QDialog(self)
+            dialog.setStyleSheet(DIALOG_STYLESHEET)
             dialog.setWindowTitle(f"Logs: {command.name}")
             dialog.resize(600, 400)
             layout = QVBoxLayout(dialog)
+            layout.setContentsMargins(16, 16, 16, 16)
+            layout.setSpacing(12)
+
             header = QHBoxLayout()
-            header.addWidget(QLabel("<b>Execution History</b>"))
+            header_label = QLabel("Execution History")
+            header_label.setStyleSheet(
+                f"font-size: 15px; font-weight: bold; color: {TEXT_PRIMARY};"
+            )
+            header.addWidget(header_label)
             header.addStretch()
             copy_btn = QPushButton("Copy")
             copy_btn.setFixedWidth(60)
@@ -392,16 +445,6 @@ class MainWindow(QMainWindow):
             layout.addLayout(header)
             text = QTextEdit()
             text.setReadOnly(True)
-            text.setStyleSheet(
-                """
-                QTextEdit {
-                    background-color: #1e1e1e;
-                    color: #ccc;
-                    font-family: Consolas, monospace;
-                    font-size: 12px;
-                }
-            """
-            )
             copy_btn.clicked.connect(lambda: QApplication.clipboard().setText(text.toPlainText()))
             if logs:
                 lines = []

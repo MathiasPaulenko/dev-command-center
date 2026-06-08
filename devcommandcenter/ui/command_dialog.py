@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 )
 
 from devcommandcenter.database.models import Command
+from devcommandcenter.ui.theme import DIALOG_STYLESHEET
 
 
 class TagEditor(QWidget):
@@ -125,37 +126,7 @@ class CommandDialog(QDialog):
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
 
-        self.setStyleSheet(
-            """
-            QDialog {
-                background-color: #252526;
-                color: #cccccc;
-            }
-            QLineEdit, QTextEdit {
-                background-color: #3c3c3c;
-                color: #cccccc;
-                border: 1px solid #555;
-                border-radius: 4px;
-                padding: 6px;
-            }
-            QPushButton {
-                background-color: #0e639c;
-                color: white;
-                border: none;
-                border-radius: 4px;
-                padding: 6px 14px;
-            }
-            QPushButton:hover {
-                background-color: #1177bb;
-            }
-            QLabel {
-                color: #cccccc;
-            }
-            QCheckBox {
-                color: #cccccc;
-            }
-        """
-        )
+        self.setStyleSheet(DIALOG_STYLESHEET)
 
     def load_data(self, command: Command) -> None:
         self.name_input.setText(command.name or "")
