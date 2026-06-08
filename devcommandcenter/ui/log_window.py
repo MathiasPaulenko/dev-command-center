@@ -15,15 +15,16 @@ from PySide6.QtWidgets import (
 
 from devcommandcenter.services.process_service import ProcessService
 from devcommandcenter.ui.theme import (
-    ACCENT_DANGER,
     APP_STYLESHEET,
     BG_ELEVATED,
     BG_INPUT,
-    BG_PRIMARY,
     BORDER,
+    RED_FILL,
+    RED_HOVER,
     STATUS_FAILED,
     STATUS_RUNNING,
     STATUS_STOPPED,
+    TEXT_DISABLED,
     TEXT_PRIMARY,
     TEXT_SECONDARY,
 )
@@ -71,27 +72,24 @@ class LogWindow(QDialog):
         header.addWidget(self.status_label)
         header.addStretch()
 
-        self.stop_btn = QPushButton("⏹  Stop")
+        self.stop_btn = QPushButton("Stop")
         self.stop_btn.setStyleSheet(
             f"""
             QPushButton {{
-                background-color: {ACCENT_DANGER}22;
-                color: {ACCENT_DANGER};
-                border: 1px solid {ACCENT_DANGER}44;
+                background-color: {RED_FILL};
+                color: #ffffff;
+                border: none;
                 border-radius: 8px;
-                padding: 6px 14px;
+                padding: 7px 18px;
                 font-size: 12px;
-                font-weight: bold;
+                font-weight: 600;
             }}
             QPushButton:hover {{
-                background-color: {ACCENT_DANGER};
-                color: {BG_PRIMARY};
-                border-color: {ACCENT_DANGER};
+                background-color: {RED_HOVER};
             }}
             QPushButton:disabled {{
                 background-color: {BG_INPUT};
-                color: {TEXT_SECONDARY};
-                border-color: {BORDER};
+                color: {TEXT_DISABLED};
             }}
         """
         )

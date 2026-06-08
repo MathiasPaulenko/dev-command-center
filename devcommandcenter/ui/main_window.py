@@ -28,11 +28,8 @@ from devcommandcenter.services.process_service import ProcessService
 from devcommandcenter.ui.command_dialog import CommandDialog
 from devcommandcenter.ui.log_window import LogWindow
 from devcommandcenter.ui.theme import (
-    ACCENT_DANGER,
-    ACCENT_DANGER_HOVER,
-    ACCENT_PRIMARY,
-    ACCENT_PRIMARY_HOVER,
-    ACCENT_SUCCESS,
+    ACCENT_FILL,
+    ACCENT_HOVER,
     APP_STYLESHEET,
     BG_BASE,
     BG_CARD,
@@ -44,9 +41,12 @@ from devcommandcenter.ui.theme import (
     BG_SURFACE,
     BORDER,
     BORDER_HOVER,
-    CYAN,
     GREEN,
-    ROSE,
+    GREEN_FILL,
+    GREEN_HOVER,
+    RED,
+    RED_FILL,
+    RED_HOVER,
     STATUS_FAILED,
     STATUS_RUNNING,
     STATUS_STOPPED,
@@ -132,9 +132,13 @@ class CommandCard(QWidget):
 
         # ── Command chip ──────────────────────────────────────
         cmd = self.command_obj.command or ""
-        self.cmd_label = QLabel(f"$ {cmd}")
+        self.cmd_label = QLabel(
+            f"<span style='color:{GREEN};'>$</span> "
+            f"<span style='color:{TEXT_PRIMARY};'>{cmd}</span>"
+        )
+        self.cmd_label.setTextFormat(Qt.TextFormat.RichText)
         self.cmd_label.setStyleSheet(
-            f"color: {GREEN}; background-color: {BG_CODE};"
+            f"background-color: {BG_CODE};"
             f"border: 1px solid {BORDER}; border-radius: 6px;"
             f"padding: 7px 12px;"
             f"font-family: 'Cascadia Code','JetBrains Mono','Fira Code','Consolas',monospace;"
@@ -173,11 +177,11 @@ class CommandCard(QWidget):
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
         self.run_btn.setStyleSheet(
-            f"QPushButton {{ background-color: {GREEN}18; color: {GREEN};"
-            f"border: 1px solid {GREEN}35; border-radius: 8px;"
+            f"QPushButton {{ background-color: {GREEN_FILL}; color: #ffffff;"
+            f"border: none; border-radius: 8px;"
             f"padding: 9px 0; font-size: 13px; font-weight: 600; }}"
-            f"QPushButton:hover {{ background-color: {GREEN}; color: {BG_BASE}; border-color: {GREEN}; }}"
-            f"QPushButton:disabled {{ background-color: {BG_ELEVATED}; color: {TEXT_DISABLED}; border-color: {BORDER}; }}"
+            f"QPushButton:hover {{ background-color: {GREEN_HOVER}; }}"
+            f"QPushButton:disabled {{ background-color: {BG_ELEVATED}; color: {TEXT_DISABLED}; }}"
         )
         self.stop_btn = QPushButton("Stop")
         self.stop_btn.setMinimumHeight(38)
@@ -186,11 +190,11 @@ class CommandCard(QWidget):
         )
         self.stop_btn.setEnabled(False)
         self.stop_btn.setStyleSheet(
-            f"QPushButton {{ background-color: {ROSE}18; color: {ROSE};"
-            f"border: 1px solid {ROSE}35; border-radius: 8px;"
+            f"QPushButton {{ background-color: {RED_FILL}; color: #ffffff;"
+            f"border: none; border-radius: 8px;"
             f"padding: 9px 0; font-size: 13px; font-weight: 600; }}"
-            f"QPushButton:hover {{ background-color: {ROSE}; color: {BG_BASE}; border-color: {ROSE}; }}"
-            f"QPushButton:disabled {{ background-color: {BG_ELEVATED}; color: {TEXT_DISABLED}; border-color: {BORDER}; }}"
+            f"QPushButton:hover {{ background-color: {RED_HOVER}; }}"
+            f"QPushButton:disabled {{ background-color: {BG_ELEVATED}; color: {TEXT_DISABLED}; }}"
         )
         action_row.addWidget(self.run_btn)
         action_row.addWidget(self.stop_btn)
@@ -206,10 +210,10 @@ class CommandCard(QWidget):
         self.delete_btn = QPushButton("Delete")
         self.delete_btn.setMinimumHeight(32)
         self.delete_btn.setStyleSheet(
-            f"QPushButton {{ background-color: {ROSE}10; color: {ROSE}99;"
-            f"border: 1px solid {ROSE}25; border-radius: 7px;"
+            f"QPushButton {{ background-color: {BG_ELEVATED}; color: {RED};"
+            f"border: 1px solid {BORDER}; border-radius: 7px;"
             f"padding: 6px 14px; font-size: 12px; font-weight: 500; }}"
-            f"QPushButton:hover {{ background-color: {ROSE}; color: {BG_BASE}; border-color: {ROSE}; }}"
+            f"QPushButton:hover {{ background-color: {RED_FILL}; color: #ffffff; border-color: {RED_FILL}; }}"
         )
         for b in (self.logs_btn, self.edit_btn, self.delete_btn):
             b.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
@@ -336,7 +340,7 @@ class MainWindow(QMainWindow):
             ("All",     TEXT_PRIMARY),
             ("Running", GREEN),
             ("Stopped", TEXT_SECONDARY),
-            ("Failed",  ROSE),
+            ("Failed",  RED),
         ]
         for label, color in filter_defs:
             btn = QPushButton(label)
@@ -352,10 +356,10 @@ class MainWindow(QMainWindow):
         self.add_btn = QPushButton("+ New Command")
         self.add_btn.setMinimumHeight(40)
         self.add_btn.setStyleSheet(
-            f"QPushButton {{ background-color: {CYAN}; color: {BG_BASE};"
+            f"QPushButton {{ background-color: {ACCENT_FILL}; color: #ffffff;"
             f"border: none; border-radius: 10px; padding: 10px 0;"
             f"font-size: 13px; font-weight: 700; }}"
-            f"QPushButton:hover {{ background-color: {ACCENT_PRIMARY_HOVER}; }}"
+            f"QPushButton:hover {{ background-color: {ACCENT_HOVER}; }}"
         )
         self.add_btn.clicked.connect(self.open_create_dialog)
         sb_layout.addWidget(self.add_btn)

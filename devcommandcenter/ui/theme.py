@@ -1,40 +1,54 @@
-"""DevCommandCenter — Obsidian theme."""
+"""DevCommandCenter — accessible dark theme (GitHub-inspired, WCAG AA)."""
 
-# ── Palette ──────────────────────────────────────────────────────────────────
-BG_BASE     = "#0b0b0f"   # near-black base
-BG_SIDEBAR  = "#0e0e13"   # sidebar surface
-BG_CARD     = "#131318"   # card background
-BG_ELEVATED = "#1a1a22"   # elevated / hover
-BG_INPUT    = "#20202c"   # inputs / chips
-BG_CODE     = "#181820"   # code block
+# ── Surfaces ─────────────────────────────────────────────────────────────────
+BG_BASE     = "#0d1117"   # main canvas
+BG_SIDEBAR  = "#010409"   # sidebar / topbar (darkest)
+BG_CARD     = "#161b22"   # card surface
+BG_ELEVATED = "#21262d"   # elevated / hover
+BG_INPUT    = "#21262d"   # inputs
+BG_CODE     = "#0d1117"   # code block
 
-BORDER       = "#252535"  # default border
-BORDER_HOVER = "#383850"  # hover border
-BORDER_FOCUS = "#22d3ee"  # focus ring
+BORDER       = "#30363d"  # default border
+BORDER_HOVER = "#484f58"  # hover border
+BORDER_FOCUS = "#4493f8"  # focus ring
 
-TEXT_PRIMARY   = "#e2e2ef"  # primary text
-TEXT_SECONDARY = "#7070a0"  # secondary / muted
-TEXT_DISABLED  = "#404058"  # disabled
+# ── Text (all ≥ 4.5:1 on dark surfaces) ──────────────────────────────────────
+TEXT_PRIMARY   = "#e6edf3"  # ~14:1  AAA
+TEXT_SECONDARY = "#9da7b3"  # ~6.2:1 AA
+TEXT_DISABLED  = "#6e7681"  # ~4:1   (large/decorative only)
 
-CYAN    = "#22d3ee"   # primary accent
-GREEN   = "#10b981"   # running / success
-ROSE    = "#f43f5e"   # danger / failed
-ORANGE  = "#f97316"   # warning
+# ── Accents (bright variants = text on dark; solid variants = fills) ──────────
+ACCENT      = "#4493f8"   # primary blue (text/links on dark)
+ACCENT_FILL = "#1f6feb"   # blue button fill (white text = 5:1)
+ACCENT_HOVER = "#388bfd"
+
+GREEN       = "#3fb950"   # running text on dark (~5.8:1)
+GREEN_FILL  = "#238636"   # run button fill (white text = 4.6:1)
+GREEN_HOVER = "#2ea043"
+
+RED         = "#ff7b72"   # failed text on dark (~6:1)
+RED_FILL    = "#da3633"   # stop/delete fill (white text = 4.5:1)
+RED_HOVER   = "#e5534b"
+
+AMBER       = "#d29922"   # warning
 
 STATUS_RUNNING = GREEN
 STATUS_STOPPED = TEXT_SECONDARY
-STATUS_FAILED  = ROSE
+STATUS_FAILED  = RED
 
-# Legacy aliases kept for compatibility
-BG_PRIMARY          = BG_BASE
-BG_SURFACE          = BG_SIDEBAR
-ACCENT_PRIMARY      = CYAN
-ACCENT_PRIMARY_HOVER = "#38bdf8"
-ACCENT_SUCCESS      = GREEN
-ACCENT_SUCCESS_HOVER = "#34d399"
-ACCENT_DANGER       = ROSE
-ACCENT_DANGER_HOVER = "#fb7185"
-ACCENT_WARNING      = ORANGE
+# ── Legacy aliases ───────────────────────────────────────────────────────────
+CYAN                 = ACCENT
+ROSE                 = RED
+ORANGE               = AMBER
+BG_PRIMARY           = BG_BASE
+BG_SURFACE           = BG_SIDEBAR
+ACCENT_PRIMARY       = ACCENT
+ACCENT_PRIMARY_HOVER = ACCENT_HOVER
+ACCENT_SUCCESS       = GREEN
+ACCENT_SUCCESS_HOVER = GREEN_HOVER
+ACCENT_DANGER        = RED
+ACCENT_DANGER_HOVER  = RED_HOVER
+ACCENT_WARNING       = AMBER
 
 # ── App-wide Qt stylesheet ────────────────────────────────────────────────────
 APP_STYLESHEET = f"""
@@ -210,9 +224,9 @@ def status_badge_stylesheet(color: str) -> str:
 # ── Tag chip ─────────────────────────────────────────────────────────────────
 def tag_chip_stylesheet() -> str:
     return (
-        f"background-color: {CYAN}12;"
-        f"color: {CYAN}cc;"
-        f"border: 1px solid {CYAN}25;"
+        f"background-color: {BG_ELEVATED};"
+        f"color: #79c0ff;"  # light blue, ~8:1 on dark
+        f"border: 1px solid {BORDER};"
         f"border-radius: 6px;"
         f"padding: 2px 9px;"
         f"font-size: 11px;"
