@@ -731,27 +731,16 @@ class MainWindow(QMainWindow):
         self.grid_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.scroll_area.setWidget(self.grid_container)
         main_vbox.addWidget(self.scroll_area, stretch=1)
-
-        # ── Footer version ────────────────────────────────────
-        footer = QWidget()
-        footer.setFixedHeight(28)
-        footer.setStyleSheet("background-color: transparent; border: none;")
-        footer_layout = QHBoxLayout(footer)
-        footer_layout.setContentsMargins(28, 0, 28, 0)
-        footer_layout.setSpacing(0)
-        footer_layout.addStretch()
-        ver_lbl = QLabel(f"v{APP_VERSION}")
-        ver_lbl.setStyleSheet(
-            f"font-size: 11px; color: {TEXT_DISABLED};"
-            f"background: transparent; border: none;"
-        )
-        footer_layout.addWidget(ver_lbl)
-        main_vbox.addWidget(footer)
-
         root.addWidget(main_area, stretch=1)
 
         # ── Status bar ────────────────────────────────────────
         self.status_bar = QStatusBar()
+        ver_lbl = QLabel(f"v{APP_VERSION}")
+        ver_lbl.setStyleSheet(
+            f"font-size: 11px; color: {TEXT_DISABLED};"
+            f"background: transparent; border: none; padding-right: 4px;"
+        )
+        self.status_bar.addPermanentWidget(ver_lbl)
         self.setStatusBar(self.status_bar)
 
         self.setStyleSheet(APP_STYLESHEET)
