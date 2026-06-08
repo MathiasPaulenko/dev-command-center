@@ -82,7 +82,6 @@ from devcommandcenter.ui.theme import (
     card_stylesheet,
     sidebar_btn_stylesheet,
     status_badge_stylesheet,
-    tag_chip_stylesheet,
 )
 
 
@@ -182,19 +181,6 @@ class CommandCard(QWidget):
         )
         self.cmd_label.setWordWrap(True)
         body_layout.addWidget(self.cmd_label)
-
-        # ── Tags ──────────────────────────────────────────────
-        tags = self.command_obj.tags or []
-        if tags:
-            tags_row = QHBoxLayout()
-            tags_row.setSpacing(5)
-            tags_row.setContentsMargins(0, 2, 0, 0)
-            for tag in tags[:5]:
-                pill = QLabel(f"#{tag}")
-                pill.setStyleSheet(tag_chip_stylesheet())
-                tags_row.addWidget(pill)
-            tags_row.addStretch()
-            body_layout.addLayout(tags_row)
 
         # ── Last run info ───────────────────────────────────
         self.last_run_label = QLabel("")
