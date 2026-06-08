@@ -92,55 +92,74 @@ class CommandCard(QWidget):
 
         layout.addLayout(info_layout, stretch=1)
 
-        btn_layout = QHBoxLayout()
-        btn_layout.setSpacing(6)
+        action_layout = QHBoxLayout()
+        action_layout.setSpacing(8)
 
-        self.run_btn = QPushButton("▶ Run")
-        self.run_btn.setFixedWidth(70)
+        self.run_btn = QPushButton("▶  Run")
+        self.run_btn.setFixedWidth(75)
         self.run_btn.setStyleSheet(
             f"""
             QPushButton {{
-                background-color: {ACCENT_SUCCESS};
-                color: #ffffff;
-                border: none;
-                border-radius: 6px;
-                padding: 5px 10px;
+                background-color: {ACCENT_SUCCESS}22;
+                color: {ACCENT_SUCCESS};
+                border: 1px solid {ACCENT_SUCCESS}44;
+                border-radius: 8px;
+                padding: 6px 12px;
                 font-size: 12px;
                 font-weight: bold;
             }}
-            QPushButton:hover {{ background-color: {ACCENT_PRIMARY_HOVER}; }}
-            QPushButton:disabled {{ background-color: {BG_INPUT}; color: {TEXT_DISABLED}; }}
+            QPushButton:hover {{
+                background-color: {ACCENT_SUCCESS};
+                color: {BG_PRIMARY};
+                border-color: {ACCENT_SUCCESS};
+            }}
+            QPushButton:disabled {{
+                background-color: {BG_INPUT};
+                color: {TEXT_DISABLED};
+                border-color: {BORDER};
+            }}
         """
         )
 
-        self.stop_btn = QPushButton("⏹ Stop")
-        self.stop_btn.setFixedWidth(70)
+        self.stop_btn = QPushButton("⏹  Stop")
+        self.stop_btn.setFixedWidth(75)
         self.stop_btn.setEnabled(False)
         self.stop_btn.setStyleSheet(
             f"""
             QPushButton {{
-                background-color: {ACCENT_DANGER};
-                color: #ffffff;
-                border: none;
-                border-radius: 6px;
-                padding: 5px 10px;
+                background-color: {ACCENT_DANGER}22;
+                color: {ACCENT_DANGER};
+                border: 1px solid {ACCENT_DANGER}44;
+                border-radius: 8px;
+                padding: 6px 12px;
                 font-size: 12px;
                 font-weight: bold;
             }}
-            QPushButton:hover {{ background-color: {ACCENT_DANGER_HOVER}; }}
-            QPushButton:disabled {{ background-color: {BG_INPUT}; color: {TEXT_DISABLED}; }}
+            QPushButton:hover {{
+                background-color: {ACCENT_DANGER};
+                color: {BG_PRIMARY};
+                border-color: {ACCENT_DANGER};
+            }}
+            QPushButton:disabled {{
+                background-color: {BG_INPUT};
+                color: {TEXT_DISABLED};
+                border-color: {BORDER};
+            }}
         """
         )
 
+        action_layout.addWidget(self.run_btn)
+        action_layout.addWidget(self.stop_btn)
+        info_layout.addLayout(action_layout)
+
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(6)
         self.logs_btn = QPushButton("Logs")
         self.logs_btn.setFixedWidth(55)
         self.edit_btn = QPushButton("Edit")
         self.edit_btn.setFixedWidth(55)
         self.delete_btn = QPushButton("Del")
         self.delete_btn.setFixedWidth(45)
-
-        btn_layout.addWidget(self.run_btn)
-        btn_layout.addWidget(self.stop_btn)
         btn_layout.addWidget(self.logs_btn)
         btn_layout.addWidget(self.edit_btn)
         btn_layout.addWidget(self.delete_btn)

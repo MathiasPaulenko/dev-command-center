@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from PySide6.QtCore import Qt, Slot
+from PySide6.QtCore import Slot
 from PySide6.QtWidgets import (
     QDialog,
     QHBoxLayout,
@@ -15,7 +15,12 @@ from PySide6.QtWidgets import (
 
 from devcommandcenter.services.process_service import ProcessService
 from devcommandcenter.ui.theme import (
+    ACCENT_DANGER,
     APP_STYLESHEET,
+    BG_ELEVATED,
+    BG_INPUT,
+    BG_PRIMARY,
+    BORDER,
     STATUS_FAILED,
     STATUS_RUNNING,
     STATUS_STOPPED,
@@ -45,18 +50,51 @@ class LogWindow(QDialog):
 
     def setup_ui(self) -> None:
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(10)
+        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(12)
 
         header = QHBoxLayout()
+        header.setSpacing(12)
+
+        title = QLabel(f"<b>{self.command_name}</b>")
+        title.setStyleSheet(
+            f"font-size: 16px; color: {TEXT_PRIMARY}; background: transparent; border: none;"
+        )
+        header.addWidget(title)
+
         self.status_label = QLabel("Stopped")
         self.status_label.setStyleSheet(
-            f"font-size: 13px; font-weight: bold; color: {TEXT_SECONDARY};"
+            f"font-size: 12px; font-weight: bold; color: {TEXT_SECONDARY};"
+            f"background-color: {BG_ELEVATED}; border: 1px solid {BORDER};"
+            f"border-radius: 8px; padding: 4px 12px;"
         )
         header.addWidget(self.status_label)
         header.addStretch()
 
-        self.stop_btn = QPushButton("⏹ Stop")
+        self.stop_btn = QPushButton("⏹  Stop")
+        self.stop_btn.setStyleSheet(
+            f"""
+            QPushButton {{
+                background-color: {ACCENT_DANGER}22;
+                color: {ACCENT_DANGER};
+                border: 1px solid {ACCENT_DANGER}44;
+                border-radius: 8px;
+                padding: 6px 14px;
+                font-size: 12px;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{
+                background-color: {ACCENT_DANGER};
+                color: {BG_PRIMARY};
+                border-color: {ACCENT_DANGER};
+            }}
+            QPushButton:disabled {{
+                background-color: {BG_INPUT};
+                color: {TEXT_SECONDARY};
+                border-color: {BORDER};
+            }}
+        """
+        )
         self.stop_btn.clicked.connect(self._stop_process)
         header.addWidget(self.stop_btn)
 
@@ -69,6 +107,20 @@ class LogWindow(QDialog):
 
         self.output = QTextEdit()
         self.output.setReadOnly(True)
+        self.output.setStyleSheet(
+            f"""
+            QTextEdit {{
+                background-color: {BG_INPUT};
+                color: {TEXT_PRIMARY};
+                border: 1px solid {BORDER};
+                border-radius: 10px;
+                padding: 12px;
+                font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+                font-size: 13px;
+                line-height: 1.5;
+            }}
+        """
+        )
         layout.addWidget(self.output, stretch=1)
 
         self.setStyleSheet(APP_STYLESHEET)
