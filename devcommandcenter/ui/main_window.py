@@ -4,14 +4,14 @@ from PySide6.QtCore import QCoreApplication, Slot
 from PySide6.QtWidgets import (
     QDialog,
     QFileDialog,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QListWidget,
-    QListWidgetItem,
     QMainWindow,
     QMessageBox,
     QPushButton,
+    QScrollArea,
     QStatusBar,
     QVBoxLayout,
     QWidget,
@@ -56,56 +56,53 @@ class CommandCard(QWidget):
         self.setup_ui()
 
     def setup_ui(self) -> None:
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(16, 12, 16, 12)
-        layout.setSpacing(14)
-
-        info_layout = QVBoxLayout()
-        info_layout.setSpacing(4)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(24, 20, 24, 20)
+        layout.setSpacing(16)
 
         top_row = QHBoxLayout()
+        top_row.setSpacing(12)
         self.name_label = QLabel(f"<b>{self.command_obj.name}</b>")
         self.name_label.setStyleSheet(
-            f"font-size: 15px; color: {TEXT_PRIMARY}; background: transparent; border: none;"
+            f"font-size: 20px; color: {TEXT_PRIMARY}; background: transparent; border: none;"
         )
         self.status_badge = QLabel("Stopped")
         self.status_badge.setStyleSheet(status_badge_stylesheet(STATUS_STOPPED))
         top_row.addWidget(self.name_label)
         top_row.addStretch()
         top_row.addWidget(self.status_badge)
-        info_layout.addLayout(top_row)
+        layout.addLayout(top_row)
 
         desc_text = self.command_obj.description or "No description"
         self.desc_label = QLabel(desc_text)
         self.desc_label.setStyleSheet(
-            f"color: {TEXT_SECONDARY}; font-size: 12px; background: transparent; border: none;"
+            f"color: {TEXT_SECONDARY}; font-size: 15px; background: transparent; border: none;"
         )
         self.desc_label.setWordWrap(True)
-        info_layout.addWidget(self.desc_label)
+        layout.addWidget(self.desc_label)
 
         tags_text = ", ".join(self.command_obj.tags or [])
         self.tags_label = QLabel(tags_text)
         self.tags_label.setStyleSheet(
-            f"color: {TEXT_DISABLED}; font-size: 11px; background: transparent; border: none;"
+            f"color: {TEXT_DISABLED}; font-size: 13px; background: transparent; border: none;"
         )
-        info_layout.addWidget(self.tags_label)
+        layout.addWidget(self.tags_label)
+        layout.addStretch()
 
-        layout.addLayout(info_layout, stretch=1)
-
-        action_layout = QHBoxLayout()
-        action_layout.setSpacing(8)
+        action_row = QHBoxLayout()
+        action_row.setSpacing(12)
 
         self.run_btn = QPushButton("▶  Run")
-        self.run_btn.setFixedWidth(75)
+        self.run_btn.setMinimumHeight(40)
         self.run_btn.setStyleSheet(
             f"""
             QPushButton {{
                 background-color: {ACCENT_SUCCESS}22;
                 color: {ACCENT_SUCCESS};
                 border: 1px solid {ACCENT_SUCCESS}44;
-                border-radius: 8px;
-                padding: 6px 12px;
-                font-size: 12px;
+                border-radius: 10px;
+                padding: 10px 20px;
+                font-size: 14px;
                 font-weight: bold;
             }}
             QPushButton:hover {{
@@ -122,7 +119,7 @@ class CommandCard(QWidget):
         )
 
         self.stop_btn = QPushButton("⏹  Stop")
-        self.stop_btn.setFixedWidth(75)
+        self.stop_btn.setMinimumHeight(40)
         self.stop_btn.setEnabled(False)
         self.stop_btn.setStyleSheet(
             f"""
@@ -130,9 +127,9 @@ class CommandCard(QWidget):
                 background-color: {ACCENT_DANGER}22;
                 color: {ACCENT_DANGER};
                 border: 1px solid {ACCENT_DANGER}44;
-                border-radius: 8px;
-                padding: 6px 12px;
-                font-size: 12px;
+                border-radius: 10px;
+                padding: 10px 20px;
+                font-size: 14px;
                 font-weight: bold;
             }}
             QPushButton:hover {{
@@ -148,23 +145,27 @@ class CommandCard(QWidget):
         """
         )
 
-        action_layout.addWidget(self.run_btn)
-        action_layout.addWidget(self.stop_btn)
-        info_layout.addLayout(action_layout)
+        action_row.addWidget(self.run_btn)
+        action_row.addWidget(self.stop_btn)
+        layout.addLayout(action_row)
 
-        btn_layout = QHBoxLayout()
-        btn_layout.setSpacing(6)
+        btn_row = QHBoxLayout()
+        btn_row.setSpacing(10)
         self.logs_btn = QPushButton("Logs")
-        self.logs_btn.setFixedWidth(55)
+        self.logs_btn.setMinimumHeight(36)
+        self.logs_btn.setStyleSheet(f"font-size: 13px; padding: 8px 16px;")
         self.edit_btn = QPushButton("Edit")
-        self.edit_btn.setFixedWidth(55)
-        self.delete_btn = QPushButton("Del")
-        self.delete_btn.setFixedWidth(45)
-        btn_layout.addWidget(self.logs_btn)
-        btn_layout.addWidget(self.edit_btn)
-        btn_layout.addWidget(self.delete_btn)
-        layout.addLayout(btn_layout)
+        self.edit_btn.setMinimumHeight(36)
+        self.edit_btn.setStyleSheet(f"font-size: 13px; padding: 8px 16px;")
+        self.delete_btn = QPushButton("Delete")
+        self.delete_btn.setMinimumHeight(36)
+        self.delete_btn.setStyleSheet(f"font-size: 13px; padding: 8px 16px;")
+        btn_row.addWidget(self.logs_btn)
+        btn_row.addWidget(self.edit_btn)
+        btn_row.addWidget(self.delete_btn)
+        layout.addLayout(btn_row)
 
+        self.setMinimumHeight(280)
         self.setStyleSheet(card_stylesheet())
 
     def update_status(self, state: str) -> None:
@@ -185,7 +186,7 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("DevCommandCenter")
-        self.resize(900, 600)
+        self.resize(1400, 900)
         self.process_service = ProcessService()
         self.process_service.stateChanged.connect(self.on_state_changed)
         self.process_service.logReady.connect(self.on_log_ready)
@@ -246,9 +247,16 @@ class MainWindow(QMainWindow):
         self.search_box.textChanged.connect(self.filter_commands)
         layout.addWidget(self.search_box)
 
-        self.list_widget = QListWidget()
-        self.list_widget.setSpacing(8)
-        layout.addWidget(self.list_widget, stretch=1)
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setStyleSheet("background-color: transparent; border: none;")
+
+        self.grid_container = QWidget()
+        self.grid_layout = QGridLayout(self.grid_container)
+        self.grid_layout.setSpacing(16)
+        self.grid_layout.setContentsMargins(0, 0, 0, 0)
+        self.scroll_area.setWidget(self.grid_container)
+        layout.addWidget(self.scroll_area, stretch=1)
 
         self.setStyleSheet(APP_STYLESHEET)
         self.add_btn.clicked.connect(self.open_create_dialog)
@@ -257,50 +265,50 @@ class MainWindow(QMainWindow):
         self.setStatusBar(self.status_bar)
         self._update_status_bar()
 
-        self.list_widget.itemDoubleClicked.connect(self._on_item_double_clicked)
-
     def load_commands(self) -> None:
-        self.list_widget.clear()
+        # Clear existing cards from grid
+        while self.grid_layout.count():
+            child = self.grid_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
         self._command_names.clear()
         self._all_commands: list[Command] = []
+        self._cards: dict[int, CommandCard] = {}
         session = SessionLocal()
         try:
             service = CommandService(session)
             commands = service.get_all()
             self._all_commands = commands
-            for cmd in commands:
+            for idx, cmd in enumerate(commands):
                 self._command_names[cmd.id] = cmd.name
-                self.add_command_card(cmd)
+                self.add_command_card(cmd, idx)
         finally:
             session.close()
 
     def filter_commands(self, text: str) -> None:
         text = text.lower()
-        for i in range(self.list_widget.count()):
-            item = self.list_widget.item(i)
-            card = self.list_widget.itemWidget(item)
-            if card:
-                match = (
-                    text in card.command_obj.name.lower()
-                    or (card.command_obj.description and text in card.command_obj.description.lower())
-                    or any(text in t.lower() for t in (card.command_obj.tags or []))
-                )
-                item.setHidden(not match)
+        for card in self._cards.values():
+            match = (
+                text in card.command_obj.name.lower()
+                or (card.command_obj.description and text in card.command_obj.description.lower())
+                or any(text in t.lower() for t in (card.command_obj.tags or []))
+            )
+            card.setVisible(match)
 
-    def add_command_card(self, command: Command) -> None:
-        item = QListWidgetItem()
+    def add_command_card(self, command: Command, index: int) -> None:
         card = CommandCard(command)
         card.run_btn.clicked.connect(lambda _, c=command: self.run_command(c))
         card.stop_btn.clicked.connect(lambda _, c=command: self.stop_command(c))
         card.logs_btn.clicked.connect(lambda _, c=command: self.show_logs_for_command(c))
         card.edit_btn.clicked.connect(lambda _, c=command: self.edit_command(c))
         card.delete_btn.clicked.connect(lambda _, c=command: self.delete_command(c))
+        card.mouseDoubleClickEvent = lambda ev, c=command: self.run_command(c)
         current_state = self.process_service.get_state(command.id)
         card.update_status(current_state)
-        card.adjustSize()
-        item.setSizeHint(card.sizeHint())
-        self.list_widget.addItem(item)
-        self.list_widget.setItemWidget(item, card)
+        row = index // 3
+        col = index % 3
+        self.grid_layout.addWidget(card, row, col)
+        self._cards[command.id] = card
 
     def run_command(self, command: Command) -> None:
         args = command.arguments or []
@@ -334,10 +342,8 @@ class MainWindow(QMainWindow):
         count = len(self._running_ids)
         self.status_bar.showMessage(f"Running: {count} process(es)")
 
-    def _on_item_double_clicked(self, item: QListWidgetItem) -> None:
-        card = self.list_widget.itemWidget(item)
-        if card:
-            self.run_command(card.command_obj)
+    def _on_item_double_clicked(self, item) -> None:
+        pass
 
     @Slot(str, str, str, int)
     def on_log_ready(self, command_id: str, stdout: str, stderr: str, exit_code: int) -> None:
@@ -354,12 +360,9 @@ class MainWindow(QMainWindow):
             session.close()
 
     def update_card_status(self, command_id: int, state: str) -> None:
-        for i in range(self.list_widget.count()):
-            item = self.list_widget.item(i)
-            card = self.list_widget.itemWidget(item)
-            if card and card.command_id == command_id:
-                card.update_status(state)
-                break
+        card = self._cards.get(command_id)
+        if card:
+            card.update_status(state)
 
     def open_create_dialog(self) -> None:
         dialog = CommandDialog(self)
