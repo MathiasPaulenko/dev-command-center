@@ -2,6 +2,19 @@
 
 All notable changes to DevCommandCenter will be documented in this file.
 
+## [1.2.0] - 2026-06-08
+
+### Added
+
+- **Pip installable** — `pip install git+https://github.com/MathiasPaulenko/dev-command-center.git` works. Entry points: `devcommandcenter` and `dcc`.
+- **`python -m devcommandcenter`** — module execution via `__main__.py`.
+
+### Changed
+
+- **Package restructure** — `assets/logo.svg` moved inside `devcommandcenter/assets/` for proper packaging.
+- **`main.py`** — simplified to a thin wrapper importing `devcommandcenter.cli:main`.
+- **`BASE_DIR`** — now points to the package root so data directory resolves correctly when installed.
+
 ## [1.1.0] - 2026-06-08
 
 ### Added
