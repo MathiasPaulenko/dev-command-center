@@ -76,6 +76,19 @@ jobs:
         with:
           path: artifacts
 
+      - name: Extract release notes from CHANGELOG
+        id: notes
+        run: |
+          tag="${{ github.ref_name }}"
+          version="${tag#v}"
+          awk -v ver="$version" '
+            $0 ~ "^## \\[" ver "\\]" { capture=1; next }
+            $0 ~ "^## \\[" { capture=0 }
+            capture { print }
+          ' CHANGELOG.md > /tmp/release_notes.md
+          echo "Extracted release notes:"
+          cat /tmp/release_notes.md
+
       - name: Create Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -83,4 +96,4 @@ jobs:
           tag="${{ github.ref_name }}"
           gh release create "$tag" artifacts/**/* \
             --title "DevCommandCenter $tag" \
-            --generate-notes
+            --notes-file /tmp/release_notes.md
