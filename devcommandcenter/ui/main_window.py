@@ -350,6 +350,40 @@ class AboutDialog(QDialog):
         credits.setAlignment(Qt.AlignmentFlag.AlignCenter)
         body_layout.addWidget(credits)
 
+        # Developer & License
+        dev = QLabel("Developed by <b>Mathias Paulenko Echeverz</b>")
+        dev.setStyleSheet(
+            f"font-size: 12px; color: {TEXT_SECONDARY};"
+            f"background: transparent; border: none;"
+        )
+        dev.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        body_layout.addWidget(dev)
+
+        license_lbl = QLabel("Licensed under MIT")
+        license_lbl.setStyleSheet(
+            f"font-size: 12px; color: {TEXT_DISABLED};"
+            f"background: transparent; border: none;"
+        )
+        license_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        body_layout.addWidget(license_lbl)
+
+        # GitHub link
+        link_lbl = QLabel(
+            '<a href="https://github.com/MathiasPaulenko/dev-command-center" '
+            'style="color:#4493f8;text-decoration:none;">'
+            'github.com/MathiasPaulenko/dev-command-center</a>'
+        )
+        link_lbl.setStyleSheet(
+            f"font-size: 12px; background: transparent; border: none;"
+        )
+        link_lbl.setTextFormat(Qt.TextFormat.RichText)
+        link_lbl.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextBrowserInteraction
+        )
+        link_lbl.setOpenExternalLinks(True)
+        link_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        body_layout.addWidget(link_lbl)
+
         root.addWidget(body, stretch=1)
 
         # Footer
