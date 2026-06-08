@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QMainWindow,
+    QMenu,
     QMessageBox,
     QPushButton,
     QScrollArea,
@@ -231,53 +232,22 @@ class CommandCard(QWidget):
         action_row.addWidget(self.stop_btn)
         body_layout.addLayout(action_row)
 
-        # ── Secondary buttons (2 rows of 2) ───────────────────
-        sec_style = (
+        # ── Options button ────────────────────────────────────
+        self.options_btn = QPushButton("⋮  Options")
+        self.options_btn.setMinimumHeight(36)
+        self.options_btn.setStyleSheet(
             f"QPushButton {{ background-color: {BG_ELEVATED}; color: {TEXT_SECONDARY};"
-            f"border: 1px solid {BORDER}; border-radius: 6px;"
-            f"padding: 5px 10px; font-size: 11px; font-weight: 500; }}"
+            f"border: 1px solid {BORDER}; border-radius: 8px;"
+            f"padding: 7px 0; font-size: 12px; font-weight: 500; }}"
             f"QPushButton:hover {{ background-color: {BG_INPUT}; color: {TEXT_PRIMARY};"
             f"border-color: {BORDER_HOVER}; }}"
         )
-
-        sec_row1 = QHBoxLayout()
-        sec_row1.setSpacing(8)
-        self.logs_btn = QPushButton("Logs")
-        self.logs_btn.setMinimumHeight(34)
-        self.history_btn = QPushButton("History")
-        self.history_btn.setMinimumHeight(34)
-        self.logs_btn.setStyleSheet(sec_style)
-        self.history_btn.setStyleSheet(sec_style)
-        for b in (self.logs_btn, self.history_btn):
-            b.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        sec_row1.addWidget(self.logs_btn)
-        sec_row1.addWidget(self.history_btn)
-        body_layout.addLayout(sec_row1)
-
-        sec_row2 = QHBoxLayout()
-        sec_row2.setSpacing(8)
-        self.edit_btn = QPushButton("Edit")
-        self.edit_btn.setMinimumHeight(34)
-        self.duplicate_btn = QPushButton("Duplicate")
-        self.duplicate_btn.setMinimumHeight(34)
-        self.delete_btn = QPushButton("Delete")
-        self.delete_btn.setMinimumHeight(34)
-        self.edit_btn.setStyleSheet(sec_style)
-        self.duplicate_btn.setStyleSheet(sec_style)
-        self.delete_btn.setStyleSheet(
-            f"QPushButton {{ background-color: {BG_ELEVATED}; color: {RED};"
-            f"border: 1px solid {BORDER}; border-radius: 6px;"
-            f"padding: 6px 12px; font-size: 11px; font-weight: 500; }}"
-            f"QPushButton:hover {{ background-color: {RED_FILL}; color: #ffffff; border-color: {RED_FILL}; }}"
+        self.options_btn.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
-        for b in (self.edit_btn, self.duplicate_btn, self.delete_btn):
-            b.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        sec_row2.addWidget(self.edit_btn)
-        sec_row2.addWidget(self.duplicate_btn)
-        sec_row2.addWidget(self.delete_btn)
-        body_layout.addLayout(sec_row2)
+        body_layout.addWidget(self.options_btn)
 
-        self.setFixedSize(320, 340)
+        self.setFixedSize(320, 290)
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
     def update_status(self, state: str) -> None:
@@ -868,11 +838,7 @@ class MainWindow(QMainWindow):
         card._visible = True
         card.run_btn.clicked.connect(lambda _, c=command: self.run_command(c))
         card.stop_btn.clicked.connect(lambda _, c=command: self.stop_command(c))
-        card.logs_btn.clicked.connect(lambda _, c=command: self.show_logs_for_command(c))
-        card.history_btn.clicked.connect(lambda _, c=command: self.show_history_for_command(c))
-        card.edit_btn.clicked.connect(lambda _, c=command: self.edit_command(c))
-        card.duplicate_btn.clicked.connect(lambda _, c=command: self.duplicate_command(c))
-        card.delete_btn.clicked.connect(lambda _, c=command: self.delete_command(c))
+        card.options_btn.clicked.connect(lambda _, c=command, crd=card: self._show_card_menu(c, crd))
         card.mouseDoubleClickEvent = lambda ev, c=command: self.run_command(c)
         current_state = self.process_service.get_state(command.id)
         card.update_status(current_state)
@@ -884,6 +850,25 @@ class MainWindow(QMainWindow):
         finally:
             session.close()
         self._cards[command.id] = card
+
+    def _show_card_menu(self, command: Command, card: QWidget) -> None:
+        menu = QMenu(self)
+        menu.setStyleSheet(
+            f"QMenu {{ background-color: {BG_CARD}; color: {TEXT_PRIMARY};"
+            f"border: 1px solid {BORDER}; border-radius: 8px; padding: 6px; }}"
+            f"QMenu::item {{ padding: 8px 20px; border-radius: 6px; }}"
+            f"QMenu::item:selected {{ background-color: {BG_ELEVATED}; }}"
+            f"QMenu::separator {{ background-color: {BORDER}; margin: 4px 0; }}"
+        )
+        menu.addAction("  Logs  ", lambda: self.show_logs_for_command(command))
+        menu.addAction("  History  ", lambda: self.show_history_for_command(command))
+        menu.addSeparator()
+        menu.addAction("  Edit  ", lambda: self.edit_command(command))
+        menu.addAction("  Duplicate  ", lambda: self.duplicate_command(command))
+        menu.addSeparator()
+        del_action = menu.addAction("  Delete  ")
+        del_action.triggered.connect(lambda: self.delete_command(command))
+        menu.exec(card.options_btn.mapToGlobal(card.options_btn.rect().bottomLeft()))
 
     def run_command(self, command: Command) -> None:
         args = command.arguments or []
