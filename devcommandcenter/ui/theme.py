@@ -1,94 +1,96 @@
-"""Centralized theme constants and stylesheet helpers for DevCommandCenter."""
+"""DevCommandCenter — Obsidian theme."""
 
-# Palette — Modern Dark (slightly warmer, higher contrast)
-BG_PRIMARY = "#0f1419"
-BG_SURFACE = "#1a1f2e"
-BG_ELEVATED = "#212736"
-BG_INPUT = "#2a3142"
-BG_CODE = "#1e2535"
-BORDER = "#3d4554"
-BORDER_HOVER = "#556070"
-BORDER_FOCUS = "#7aa2f7"
+# ── Palette ──────────────────────────────────────────────────────────────────
+BG_BASE     = "#0b0b0f"   # near-black base
+BG_SIDEBAR  = "#0e0e13"   # sidebar surface
+BG_CARD     = "#131318"   # card background
+BG_ELEVATED = "#1a1a22"   # elevated / hover
+BG_INPUT    = "#20202c"   # inputs / chips
+BG_CODE     = "#181820"   # code block
 
-TEXT_PRIMARY = "#c0caf5"
-TEXT_SECONDARY = "#a9b1d6"
-TEXT_DISABLED = "#565f89"
+BORDER       = "#252535"  # default border
+BORDER_HOVER = "#383850"  # hover border
+BORDER_FOCUS = "#22d3ee"  # focus ring
 
-ACCENT_PRIMARY = "#7aa2f7"
-ACCENT_PRIMARY_HOVER = "#bb9af7"
-ACCENT_SUCCESS = "#73daca"
-ACCENT_SUCCESS_HOVER = "#9ece6a"
-ACCENT_DANGER = "#f7768e"
-ACCENT_DANGER_HOVER = "#ff9e64"
-ACCENT_WARNING = "#e0af68"
+TEXT_PRIMARY   = "#e2e2ef"  # primary text
+TEXT_SECONDARY = "#7070a0"  # secondary / muted
+TEXT_DISABLED  = "#404058"  # disabled
 
-STATUS_RUNNING = "#73daca"
-STATUS_STOPPED = "#565f89"
-STATUS_FAILED = "#f7768e"
+CYAN    = "#22d3ee"   # primary accent
+GREEN   = "#10b981"   # running / success
+ROSE    = "#f43f5e"   # danger / failed
+ORANGE  = "#f97316"   # warning
 
-# Global application stylesheet
+STATUS_RUNNING = GREEN
+STATUS_STOPPED = TEXT_SECONDARY
+STATUS_FAILED  = ROSE
+
+# Legacy aliases kept for compatibility
+BG_PRIMARY          = BG_BASE
+BG_SURFACE          = BG_SIDEBAR
+ACCENT_PRIMARY      = CYAN
+ACCENT_PRIMARY_HOVER = "#38bdf8"
+ACCENT_SUCCESS      = GREEN
+ACCENT_SUCCESS_HOVER = "#34d399"
+ACCENT_DANGER       = ROSE
+ACCENT_DANGER_HOVER = "#fb7185"
+ACCENT_WARNING      = ORANGE
+
+# ── App-wide Qt stylesheet ────────────────────────────────────────────────────
 APP_STYLESHEET = f"""
 QMainWindow {{
-    background-color: {BG_PRIMARY};
+    background-color: {BG_BASE};
     color: {TEXT_PRIMARY};
 }}
-
+QWidget {{
+    font-size: 13px;
+}}
 QMenuBar {{
-    background-color: {BG_SURFACE};
-    color: {TEXT_PRIMARY};
+    background-color: {BG_SIDEBAR};
+    color: {TEXT_SECONDARY};
     border-bottom: 1px solid {BORDER};
-    padding: 4px;
+    padding: 2px 6px;
+    font-size: 12px;
 }}
-QMenuBar::item {{
-    padding: 4px 12px;
-    border-radius: 4px;
-}}
-QMenuBar::item:selected {{
-    background-color: {BG_ELEVATED};
-}}
+QMenuBar::item {{ padding: 5px 10px; border-radius: 4px; }}
+QMenuBar::item:selected {{ background-color: {BG_ELEVATED}; color: {TEXT_PRIMARY}; }}
 QMenu {{
-    background-color: {BG_SURFACE};
+    background-color: {BG_SIDEBAR};
     color: {TEXT_PRIMARY};
     border: 1px solid {BORDER};
-    border-radius: 6px;
-    padding: 6px;
+    border-radius: 8px;
+    padding: 4px;
 }}
-QMenu::item {{
-    padding: 6px 16px;
-    border-radius: 4px;
-}}
-QMenu::item:selected {{
-    background-color: {BG_ELEVATED};
-}}
+QMenu::item {{ padding: 7px 16px; border-radius: 4px; }}
+QMenu::item:selected {{ background-color: {BG_ELEVATED}; }}
+QMenu::separator {{ background-color: {BORDER}; height: 1px; margin: 3px 8px; }}
 
 QLineEdit {{
     background-color: {BG_INPUT};
     color: {TEXT_PRIMARY};
     border: 1px solid {BORDER};
     border-radius: 8px;
-    padding: 10px 14px;
+    padding: 9px 14px;
     font-size: 13px;
+    selection-background-color: {CYAN}33;
 }}
-QLineEdit:focus {{
-    border: 1px solid {BORDER_FOCUS};
-}}
-QLineEdit::placeholder {{
-    color: {TEXT_DISABLED};
-}}
+QLineEdit:focus {{ border-color: {CYAN}; }}
 
 QTextEdit {{
-    background-color: {BG_INPUT};
+    background-color: {BG_CODE};
     color: {TEXT_PRIMARY};
     border: 1px solid {BORDER};
     border-radius: 8px;
-    padding: 10px;
-    font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+    padding: 12px;
+    font-family: "Cascadia Code", "JetBrains Mono", "Fira Code", "Consolas", monospace;
     font-size: 13px;
+    line-height: 1.6;
+    selection-background-color: {CYAN}33;
 }}
 
 QPushButton {{
     background-color: {BG_ELEVATED};
-    color: {TEXT_PRIMARY};
+    color: {TEXT_SECONDARY};
     border: 1px solid {BORDER};
     border-radius: 8px;
     padding: 8px 18px;
@@ -97,140 +99,145 @@ QPushButton {{
 }}
 QPushButton:hover {{
     background-color: {BG_INPUT};
+    color: {TEXT_PRIMARY};
     border-color: {BORDER_HOVER};
 }}
-QPushButton:pressed {{
-    background-color: {BG_SURFACE};
-}}
-QPushButton:disabled {{
-    color: {TEXT_DISABLED};
-    border-color: {BORDER};
-}}
-
-QStatusBar {{
-    background-color: {BG_SURFACE};
-    color: {TEXT_SECONDARY};
-    border-top: 1px solid {BORDER};
-}}
+QPushButton:pressed {{ background-color: {BG_SIDEBAR}; }}
+QPushButton:disabled {{ color: {TEXT_DISABLED}; border-color: {BORDER}; }}
 
 QScrollBar:vertical {{
-    background-color: {BG_PRIMARY};
-    width: 10px;
-    border-radius: 5px;
+    background: transparent;
+    width: 6px;
+    margin: 2px;
 }}
 QScrollBar::handle:vertical {{
-    background-color: {BORDER};
-    border-radius: 5px;
-    min-height: 30px;
+    background: {BORDER};
+    border-radius: 3px;
+    min-height: 20px;
 }}
-QScrollBar::handle:vertical:hover {{
-    background-color: {BORDER_HOVER};
-}}
-QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
-    height: 0px;
-}}
+QScrollBar::handle:vertical:hover {{ background: {BORDER_HOVER}; }}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{ height: 0; }}
 
-QListWidget {{
-    background-color: {BG_PRIMARY};
-    border: none;
-    outline: none;
-}}
-QListWidget::item {{
-    background: transparent;
-    padding: 8px;
-}}
-QListWidget::item:selected {{
-    background: transparent;
+QStatusBar {{
+    background-color: {BG_SIDEBAR};
+    color: {TEXT_DISABLED};
+    border-top: 1px solid {BORDER};
+    font-size: 11px;
+    padding: 0 20px;
 }}
 """
 
+# ── Dialog stylesheet ────────────────────────────────────────────────────────
 DIALOG_STYLESHEET = f"""
 QDialog {{
-    background-color: {BG_SURFACE};
+    background-color: {BG_SIDEBAR};
     color: {TEXT_PRIMARY};
 }}
 QLabel {{
-    color: {TEXT_PRIMARY};
+    color: {TEXT_SECONDARY};
     font-size: 13px;
+    background: transparent;
 }}
 QCheckBox {{
     color: {TEXT_SECONDARY};
     font-size: 13px;
+    spacing: 8px;
 }}
 QCheckBox::indicator {{
-    width: 20px;
-    height: 20px;
-    border-radius: 6px;
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
     border: 1px solid {BORDER};
     background-color: {BG_INPUT};
 }}
 QCheckBox::indicator:checked {{
-    background-color: {ACCENT_PRIMARY};
-    border-color: {ACCENT_PRIMARY};
+    background-color: {CYAN};
+    border-color: {CYAN};
 }}
 QDialogButtonBox QPushButton {{
-    min-width: 90px;
+    min-width: 88px;
+    min-height: 36px;
 }}
 """
 
 
+# ── Card stylesheet ───────────────────────────────────────────────────────────
 def card_stylesheet() -> str:
     return f"""
     QWidget {{
-        background-color: {BG_SURFACE};
+        background-color: {BG_CARD};
         border: 1px solid {BORDER};
-        border-radius: 14px;
-    }}
-    QWidget:hover {{
-        border: 1px solid {BORDER_HOVER};
+        border-radius: 12px;
     }}
     QLabel {{
         background: transparent;
         border: none;
+        color: {TEXT_SECONDARY};
     }}
     QPushButton {{
         background-color: {BG_ELEVATED};
-        color: {TEXT_PRIMARY};
+        color: {TEXT_SECONDARY};
         border: 1px solid {BORDER};
-        border-radius: 8px;
-        padding: 6px 14px;
+        border-radius: 7px;
+        padding: 7px 14px;
         font-size: 12px;
         font-weight: 500;
-        min-width: 50px;
     }}
     QPushButton:hover {{
         background-color: {BG_INPUT};
+        color: {TEXT_PRIMARY};
         border-color: {BORDER_HOVER};
     }}
-    QPushButton:pressed {{
-        background-color: {BG_SURFACE};
-    }}
-    QPushButton:disabled {{
-        color: {TEXT_DISABLED};
-    }}
+    QPushButton:pressed {{ background-color: {BG_SIDEBAR}; }}
+    QPushButton:disabled {{ color: {TEXT_DISABLED}; border-color: {BORDER}; }}
 """
 
 
+# ── Status badge ─────────────────────────────────────────────────────────────
 def status_badge_stylesheet(color: str) -> str:
-    return f"""
-    background-color: {color}18;
-    color: {color};
-    border: 1px solid {color}40;
-    border-radius: 12px;
-    padding: 3px 12px;
-    font-size: 11px;
-    font-weight: bold;
-    letter-spacing: 0.5px;
-"""
+    return (
+        f"background-color: {color}1a;"
+        f"color: {color};"
+        f"border: 1px solid {color}40;"
+        f"border-radius: 20px;"
+        f"padding: 3px 14px;"
+        f"font-size: 11px;"
+        f"font-weight: 600;"
+        f"letter-spacing: 0.8px;"
+    )
 
 
+# ── Tag chip ─────────────────────────────────────────────────────────────────
 def tag_chip_stylesheet() -> str:
-    return f"""
-    background-color: {ACCENT_PRIMARY}18;
-    color: {ACCENT_PRIMARY};
-    border: 1px solid {ACCENT_PRIMARY}30;
-    border-radius: 10px;
-    padding: 2px 10px;
-    font-size: 11px;
-    font-weight: 500;
-"""
+    return (
+        f"background-color: {CYAN}12;"
+        f"color: {CYAN}cc;"
+        f"border: 1px solid {CYAN}25;"
+        f"border-radius: 6px;"
+        f"padding: 2px 9px;"
+        f"font-size: 11px;"
+    )
+
+
+# ── Sidebar filter button ────────────────────────────────────────────────────
+def sidebar_btn_stylesheet(active: bool = False) -> str:
+    if active:
+        return (
+            f"background-color: {BG_ELEVATED};"
+            f"color: {TEXT_PRIMARY};"
+            f"border: 1px solid {BORDER_HOVER};"
+            f"border-radius: 8px;"
+            f"padding: 9px 16px;"
+            f"font-size: 13px;"
+            f"font-weight: 600;"
+            f"text-align: left;"
+        )
+    return (
+        f"background-color: transparent;"
+        f"color: {TEXT_SECONDARY};"
+        f"border: 1px solid transparent;"
+        f"border-radius: 8px;"
+        f"padding: 9px 16px;"
+        f"font-size: 13px;"
+        f"text-align: left;"
+    )

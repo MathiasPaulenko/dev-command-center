@@ -34,13 +34,19 @@ from devcommandcenter.ui.theme import (
     ACCENT_PRIMARY_HOVER,
     ACCENT_SUCCESS,
     APP_STYLESHEET,
+    BG_BASE,
+    BG_CARD,
     BG_CODE,
     BG_ELEVATED,
     BG_INPUT,
     BG_PRIMARY,
+    BG_SIDEBAR,
     BG_SURFACE,
     BORDER,
     BORDER_HOVER,
+    CYAN,
+    GREEN,
+    ROSE,
     STATUS_FAILED,
     STATUS_RUNNING,
     STATUS_STOPPED,
@@ -48,6 +54,7 @@ from devcommandcenter.ui.theme import (
     TEXT_PRIMARY,
     TEXT_SECONDARY,
     card_stylesheet,
+    sidebar_btn_stylesheet,
     status_badge_stylesheet,
     tag_chip_stylesheet,
 )
@@ -58,174 +65,174 @@ class CommandCard(QWidget):
         super().__init__(parent)
         self.command_id = command.id
         self.command_obj = command
+        self._state = "Stopped"
         self.setup_ui()
 
     def setup_ui(self) -> None:
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(22, 20, 22, 20)
-        layout.setSpacing(12)
+        # Outer: accent bar (left strip) + card body
+        outer = QHBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
 
-        # ── Top: status dot + name + badge ────────────────────
+        self.accent_bar = QFrame()
+        self.accent_bar.setObjectName("accent_bar")
+        self.accent_bar.setFixedWidth(4)
+        self.accent_bar.setStyleSheet(
+            f"background-color: {STATUS_STOPPED}; border: none; border-radius: 3px;"
+        )
+        outer.addWidget(self.accent_bar)
+
+        body = QWidget()
+        body.setObjectName("card_body")
+        body.setStyleSheet(
+            f"QWidget#card_body {{ background-color: {BG_CARD};"
+            f"border: 1px solid {BORDER};"
+            f"border-left: none;"
+            f"border-top-right-radius: 12px;"
+            f"border-bottom-right-radius: 12px; }}"
+            f"QLabel {{ background: transparent; border: none; }}"
+            f"QPushButton {{ background-color: {BG_ELEVATED}; color: {TEXT_SECONDARY};"
+            f"border: 1px solid {BORDER}; border-radius: 7px;"
+            f"padding: 7px 14px; font-size: 12px; font-weight: 500; }}"
+            f"QPushButton:hover {{ background-color: {BG_INPUT}; color: {TEXT_PRIMARY};"
+            f"border-color: {BORDER_HOVER}; }}"
+            f"QPushButton:disabled {{ color: {TEXT_DISABLED}; }}"
+        )
+        body_layout = QVBoxLayout(body)
+        body_layout.setContentsMargins(20, 18, 20, 18)
+        body_layout.setSpacing(10)
+        outer.addWidget(body, stretch=1)
+
+        # ── Name + badge row ──────────────────────────────────
         top_row = QHBoxLayout()
         top_row.setSpacing(10)
-
-        self.status_dot = QLabel("●")
-        self.status_dot.setStyleSheet(
-            f"font-size: 14px; color: {STATUS_STOPPED}; background: transparent; border: none;"
-        )
-        self.name_label = QLabel(f"{self.command_obj.name}")
+        self.name_label = QLabel(self.command_obj.name)
         self.name_label.setStyleSheet(
-            f"font-size: 18px; font-weight: 700; color: {TEXT_PRIMARY}; background: transparent; border: none;"
+            f"font-size: 16px; font-weight: 700; color: {TEXT_PRIMARY};"
         )
-        self.name_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        self.name_label.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
+        )
         self.status_badge = QLabel("Stopped")
         self.status_badge.setStyleSheet(status_badge_stylesheet(STATUS_STOPPED))
-        top_row.addWidget(self.status_dot)
         top_row.addWidget(self.name_label)
         top_row.addStretch()
         top_row.addWidget(self.status_badge)
-        layout.addLayout(top_row)
+        body_layout.addLayout(top_row)
 
         # ── Description ───────────────────────────────────────
-        desc_text = self.command_obj.description or "No description"
-        self.desc_label = QLabel(desc_text)
-        self.desc_label.setStyleSheet(
-            f"color: {TEXT_SECONDARY}; font-size: 13px; background: transparent; border: none;"
-        )
-        self.desc_label.setWordWrap(True)
-        layout.addWidget(self.desc_label)
+        desc = self.command_obj.description or ""
+        if desc:
+            self.desc_label = QLabel(desc)
+            self.desc_label.setStyleSheet(
+                f"color: {TEXT_SECONDARY}; font-size: 13px;"
+            )
+            self.desc_label.setWordWrap(True)
+            body_layout.addWidget(self.desc_label)
 
         # ── Command chip ──────────────────────────────────────
-        cmd_text = self.command_obj.command or ""
-        self.cmd_chip = QLabel(f"$ {cmd_text}")
-        self.cmd_chip.setStyleSheet(
-            f"color: {ACCENT_SUCCESS}; background-color: {BG_CODE};"
+        cmd = self.command_obj.command or ""
+        self.cmd_label = QLabel(f"$ {cmd}")
+        self.cmd_label.setStyleSheet(
+            f"color: {GREEN}; background-color: {BG_CODE};"
             f"border: 1px solid {BORDER}; border-radius: 6px;"
-            f"padding: 6px 12px; font-family: 'JetBrains Mono','Fira Code','Consolas',monospace;"
+            f"padding: 7px 12px;"
+            f"font-family: 'Cascadia Code','JetBrains Mono','Fira Code','Consolas',monospace;"
             f"font-size: 12px;"
         )
-        self.cmd_chip.setWordWrap(True)
-        layout.addWidget(self.cmd_chip)
+        self.cmd_label.setWordWrap(True)
+        body_layout.addWidget(self.cmd_label)
 
         # ── Tags ──────────────────────────────────────────────
         tags = self.command_obj.tags or []
         if tags:
             tags_row = QHBoxLayout()
-            tags_row.setSpacing(6)
-            tags_row.setContentsMargins(0, 0, 0, 0)
-            for tag in tags[:4]:
-                chip = QLabel(f"#{tag}")
-                chip.setStyleSheet(tag_chip_stylesheet())
-                tags_row.addWidget(chip)
+            tags_row.setSpacing(5)
+            tags_row.setContentsMargins(0, 2, 0, 0)
+            for tag in tags[:5]:
+                pill = QLabel(f"#{tag}")
+                pill.setStyleSheet(tag_chip_stylesheet())
+                tags_row.addWidget(pill)
             tags_row.addStretch()
-            layout.addLayout(tags_row)
+            body_layout.addLayout(tags_row)
 
-        layout.addStretch()
+        body_layout.addStretch()
 
-        # ── Separator ─────────────────────────────────────────
-        sep = QFrame()
-        sep.setFrameShape(QFrame.Shape.HLine)
-        sep.setStyleSheet(f"background-color: {BORDER}; border: none; max-height: 1px;")
-        layout.addWidget(sep)
+        # ── Divider ───────────────────────────────────────────
+        div = QFrame()
+        div.setFrameShape(QFrame.Shape.HLine)
+        div.setStyleSheet(f"background: {BORDER}; border: none; max-height: 1px; margin: 4px 0;")
+        body_layout.addWidget(div)
 
-        # ── Primary actions ───────────────────────────────────
+        # ── Run / Stop ────────────────────────────────────────
         action_row = QHBoxLayout()
-        action_row.setSpacing(10)
-
-        self.run_btn = QPushButton("▶  Run")
-        self.run_btn.setMinimumHeight(42)
-        self.run_btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self.run_btn.setStyleSheet(
-            f"""
-            QPushButton {{
-                background-color: {ACCENT_SUCCESS}22;
-                color: {ACCENT_SUCCESS};
-                border: 1px solid {ACCENT_SUCCESS}44;
-                border-radius: 10px;
-                padding: 10px 0;
-                font-size: 14px;
-                font-weight: bold;
-            }}
-            QPushButton:hover {{
-                background-color: {ACCENT_SUCCESS};
-                color: {BG_PRIMARY};
-                border-color: {ACCENT_SUCCESS};
-            }}
-            QPushButton:disabled {{
-                background-color: {BG_INPUT};
-                color: {TEXT_DISABLED};
-                border-color: {BORDER};
-            }}
-        """
+        action_row.setSpacing(8)
+        self.run_btn = QPushButton("Run")
+        self.run_btn.setMinimumHeight(38)
+        self.run_btn.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
-
-        self.stop_btn = QPushButton("⏹  Stop")
-        self.stop_btn.setMinimumHeight(42)
-        self.stop_btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.run_btn.setStyleSheet(
+            f"QPushButton {{ background-color: {GREEN}18; color: {GREEN};"
+            f"border: 1px solid {GREEN}35; border-radius: 8px;"
+            f"padding: 9px 0; font-size: 13px; font-weight: 600; }}"
+            f"QPushButton:hover {{ background-color: {GREEN}; color: {BG_BASE}; border-color: {GREEN}; }}"
+            f"QPushButton:disabled {{ background-color: {BG_ELEVATED}; color: {TEXT_DISABLED}; border-color: {BORDER}; }}"
+        )
+        self.stop_btn = QPushButton("Stop")
+        self.stop_btn.setMinimumHeight(38)
+        self.stop_btn.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
         self.stop_btn.setEnabled(False)
         self.stop_btn.setStyleSheet(
-            f"""
-            QPushButton {{
-                background-color: {ACCENT_DANGER}22;
-                color: {ACCENT_DANGER};
-                border: 1px solid {ACCENT_DANGER}44;
-                border-radius: 10px;
-                padding: 10px 0;
-                font-size: 14px;
-                font-weight: bold;
-            }}
-            QPushButton:hover {{
-                background-color: {ACCENT_DANGER};
-                color: {BG_PRIMARY};
-                border-color: {ACCENT_DANGER};
-            }}
-            QPushButton:disabled {{
-                background-color: {BG_INPUT};
-                color: {TEXT_DISABLED};
-                border-color: {BORDER};
-            }}
-        """
+            f"QPushButton {{ background-color: {ROSE}18; color: {ROSE};"
+            f"border: 1px solid {ROSE}35; border-radius: 8px;"
+            f"padding: 9px 0; font-size: 13px; font-weight: 600; }}"
+            f"QPushButton:hover {{ background-color: {ROSE}; color: {BG_BASE}; border-color: {ROSE}; }}"
+            f"QPushButton:disabled {{ background-color: {BG_ELEVATED}; color: {TEXT_DISABLED}; border-color: {BORDER}; }}"
         )
-
         action_row.addWidget(self.run_btn)
         action_row.addWidget(self.stop_btn)
-        layout.addLayout(action_row)
+        body_layout.addLayout(action_row)
 
-        # ── Secondary actions ─────────────────────────────────
-        btn_row = QHBoxLayout()
-        btn_row.setSpacing(8)
-        self.logs_btn = QPushButton("📋 Logs")
-        self.logs_btn.setMinimumHeight(34)
-        self.edit_btn = QPushButton("✏ Edit")
-        self.edit_btn.setMinimumHeight(34)
-        self.delete_btn = QPushButton("🗑 Delete")
-        self.delete_btn.setMinimumHeight(34)
+        # ── Secondary buttons ─────────────────────────────────
+        sec_row = QHBoxLayout()
+        sec_row.setSpacing(6)
+        self.logs_btn = QPushButton("Logs")
+        self.logs_btn.setMinimumHeight(32)
+        self.edit_btn = QPushButton("Edit")
+        self.edit_btn.setMinimumHeight(32)
+        self.delete_btn = QPushButton("Delete")
+        self.delete_btn.setMinimumHeight(32)
         self.delete_btn.setStyleSheet(
-            f"QPushButton {{ color: {ACCENT_DANGER}; }}"
-            f"QPushButton:hover {{ color: {BG_PRIMARY}; background-color: {ACCENT_DANGER}; border-color: {ACCENT_DANGER}; }}"
+            f"QPushButton {{ background-color: {ROSE}10; color: {ROSE}99;"
+            f"border: 1px solid {ROSE}25; border-radius: 7px;"
+            f"padding: 6px 14px; font-size: 12px; font-weight: 500; }}"
+            f"QPushButton:hover {{ background-color: {ROSE}; color: {BG_BASE}; border-color: {ROSE}; }}"
         )
         for b in (self.logs_btn, self.edit_btn, self.delete_btn):
             b.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        btn_row.addWidget(self.logs_btn)
-        btn_row.addWidget(self.edit_btn)
-        btn_row.addWidget(self.delete_btn)
-        layout.addLayout(btn_row)
+        sec_row.addWidget(self.logs_btn)
+        sec_row.addWidget(self.edit_btn)
+        sec_row.addWidget(self.delete_btn)
+        body_layout.addLayout(sec_row)
 
-        self.setMinimumHeight(300)
+        self.setMinimumHeight(280)
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
-        self.setStyleSheet(card_stylesheet())
 
     def update_status(self, state: str) -> None:
-        self.status_badge.setText(state)
+        self._state = state
         color_map = {
             "Running": STATUS_RUNNING,
             "Stopped": STATUS_STOPPED,
-            "Failed": STATUS_FAILED,
+            "Failed":  STATUS_FAILED,
         }
         color = color_map.get(state, STATUS_STOPPED)
+        self.status_badge.setText(state)
         self.status_badge.setStyleSheet(status_badge_stylesheet(color))
-        self.status_dot.setStyleSheet(
-            f"font-size: 14px; color: {color}; background: transparent; border: none;"
+        self.accent_bar.setStyleSheet(
+            f"background-color: {color}; border: none; border-radius: 3px;"
         )
         self.run_btn.setEnabled(state != "Running")
         self.stop_btn.setEnabled(state == "Running")
@@ -235,18 +242,22 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("DevCommandCenter")
-        self.resize(1400, 900)
+        self.resize(1440, 900)
         self.process_service = ProcessService()
         self.process_service.stateChanged.connect(self.on_state_changed)
         self.process_service.logReady.connect(self.on_log_ready)
         self._command_names: dict[int, str] = {}
         self._running_ids: set[int] = set()
         self._log_windows: dict[int, LogWindow] = {}
+        self._cards: dict[int, CommandCard] = {}
+        self._filter_state: str = "All"
+        self._filter_text: str = ""
         self.setup_ui()
         self.load_commands()
         self._auto_run_commands()
 
     def setup_ui(self) -> None:
+        # ── Menu bar (minimal) ────────────────────────────────
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu("File")
         import_action = file_menu.addAction("Import JSON")
@@ -255,7 +266,6 @@ class MainWindow(QMainWindow):
         exit_action = file_menu.addAction("Exit")
         help_menu = menu_bar.addMenu("Help")
         about_action = help_menu.addAction("About")
-
         import_action.triggered.connect(self.import_commands)
         export_action.triggered.connect(self.export_commands)
         exit_action.triggered.connect(self.close)
@@ -263,73 +273,126 @@ class MainWindow(QMainWindow):
 
         central = QWidget()
         self.setCentralWidget(central)
-        root = QVBoxLayout(central)
+        root = QHBoxLayout(central)
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(0)
 
-        # ── Top navbar ─────────────────────────────────────────
-        navbar = QWidget()
-        navbar.setFixedHeight(70)
-        navbar.setStyleSheet(
-            f"background-color: {BG_SURFACE}; border-bottom: 1px solid {BORDER};"
+        # ══ SIDEBAR ═══════════════════════════════════════════
+        sidebar = QWidget()
+        sidebar.setFixedWidth(220)
+        sidebar.setStyleSheet(
+            f"background-color: {BG_SIDEBAR};"
+            f"border-right: 1px solid {BORDER};"
         )
-        navbar_layout = QHBoxLayout(navbar)
-        navbar_layout.setContentsMargins(28, 0, 28, 0)
-        navbar_layout.setSpacing(16)
+        sb_layout = QVBoxLayout(sidebar)
+        sb_layout.setContentsMargins(16, 24, 16, 20)
+        sb_layout.setSpacing(4)
 
-        brand_icon = QLabel("⚡")
-        brand_icon.setStyleSheet(
-            f"font-size: 28px; background: transparent; border: none; color: {ACCENT_PRIMARY};"
+        # Brand
+        brand = QLabel("DevCmd\nCenter")
+        brand.setStyleSheet(
+            f"font-size: 20px; font-weight: 800; color: {TEXT_PRIMARY};"
+            f"background: transparent; border: none; letter-spacing: -0.5px;"
         )
-        brand_col = QVBoxLayout()
-        brand_col.setSpacing(0)
-        brand_title = QLabel("DevCommandCenter")
-        brand_title.setStyleSheet(
-            f"font-size: 18px; font-weight: 700; color: {TEXT_PRIMARY}; background: transparent; border: none;"
+        sb_layout.addWidget(brand)
+
+        ver_lbl = QLabel(f"v{APP_VERSION}")
+        ver_lbl.setStyleSheet(
+            f"font-size: 11px; color: {TEXT_DISABLED};"
+            f"background: transparent; border: none; margin-bottom: 16px;"
         )
-        brand_sub = QLabel(f"v{APP_VERSION}  •  command runner")
-        brand_sub.setStyleSheet(
-            f"font-size: 11px; color: {TEXT_DISABLED}; background: transparent; border: none;"
+        sb_layout.addWidget(ver_lbl)
+
+        # Running counter
+        sep1 = QFrame()
+        sep1.setFrameShape(QFrame.Shape.HLine)
+        sep1.setStyleSheet(f"background: {BORDER}; border: none; max-height: 1px; margin: 8px 0;")
+        sb_layout.addWidget(sep1)
+
+        self.running_lbl = QLabel("0 running")
+        self.running_lbl.setStyleSheet(
+            f"font-size: 12px; color: {TEXT_SECONDARY};"
+            f"background: transparent; border: none; padding: 4px 0;"
         )
-        brand_col.addWidget(brand_title)
-        brand_col.addWidget(brand_sub)
-        navbar_layout.addWidget(brand_icon)
-        navbar_layout.addLayout(brand_col)
-        navbar_layout.addStretch()
+        sb_layout.addWidget(self.running_lbl)
+
+        sep2 = QFrame()
+        sep2.setFrameShape(QFrame.Shape.HLine)
+        sep2.setStyleSheet(f"background: {BORDER}; border: none; max-height: 1px; margin: 8px 0;")
+        sb_layout.addWidget(sep2)
+
+        # Filter buttons
+        filters_lbl = QLabel("FILTER")
+        filters_lbl.setStyleSheet(
+            f"font-size: 10px; font-weight: 700; color: {TEXT_DISABLED};"
+            f"background: transparent; border: none; letter-spacing: 1.5px; padding: 4px 0 8px 0;"
+        )
+        sb_layout.addWidget(filters_lbl)
+
+        self._filter_btns: dict[str, QPushButton] = {}
+        filter_defs = [
+            ("All",     TEXT_PRIMARY),
+            ("Running", GREEN),
+            ("Stopped", TEXT_SECONDARY),
+            ("Failed",  ROSE),
+        ]
+        for label, color in filter_defs:
+            btn = QPushButton(label)
+            btn.setCheckable(False)
+            btn.setStyleSheet(sidebar_btn_stylesheet(active=(label == "All")))
+            btn.clicked.connect(lambda _, lbl=label: self._set_filter_state(lbl))
+            self._filter_btns[label] = btn
+            sb_layout.addWidget(btn)
+
+        sb_layout.addStretch()
+
+        # New command button at sidebar bottom
+        self.add_btn = QPushButton("+ New Command")
+        self.add_btn.setMinimumHeight(40)
+        self.add_btn.setStyleSheet(
+            f"QPushButton {{ background-color: {CYAN}; color: {BG_BASE};"
+            f"border: none; border-radius: 10px; padding: 10px 0;"
+            f"font-size: 13px; font-weight: 700; }}"
+            f"QPushButton:hover {{ background-color: {ACCENT_PRIMARY_HOVER}; }}"
+        )
+        self.add_btn.clicked.connect(self.open_create_dialog)
+        sb_layout.addWidget(self.add_btn)
+        root.addWidget(sidebar)
+
+        # ══ MAIN AREA ═════════════════════════════════════════
+        main_area = QWidget()
+        main_area.setStyleSheet(f"background-color: {BG_BASE};")
+        main_vbox = QVBoxLayout(main_area)
+        main_vbox.setContentsMargins(0, 0, 0, 0)
+        main_vbox.setSpacing(0)
+
+        # ── Top bar (search + title) ──────────────────────────
+        topbar = QWidget()
+        topbar.setFixedHeight(64)
+        topbar.setStyleSheet(
+            f"background-color: {BG_SIDEBAR}; border-bottom: 1px solid {BORDER};"
+        )
+        topbar_layout = QHBoxLayout(topbar)
+        topbar_layout.setContentsMargins(28, 0, 28, 0)
+        topbar_layout.setSpacing(16)
+
+        self.page_title = QLabel("All Commands")
+        self.page_title.setStyleSheet(
+            f"font-size: 15px; font-weight: 600; color: {TEXT_PRIMARY};"
+            f"background: transparent; border: none;"
+        )
+        topbar_layout.addWidget(self.page_title)
+        topbar_layout.addStretch()
 
         self.search_box = QLineEdit()
-        self.search_box.setPlaceholderText("🔍  Search commands...")
-        self.search_box.setFixedWidth(280)
-        self.search_box.setFixedHeight(38)
+        self.search_box.setPlaceholderText("Search by name, description or tag...")
+        self.search_box.setFixedWidth(320)
+        self.search_box.setFixedHeight(36)
         self.search_box.textChanged.connect(self.filter_commands)
-        navbar_layout.addWidget(self.search_box)
+        topbar_layout.addWidget(self.search_box)
+        main_vbox.addWidget(topbar)
 
-        self.add_btn = QPushButton("+ New Command")
-        self.add_btn.setFixedHeight(38)
-        self.add_btn.setStyleSheet(
-            f"""
-            QPushButton {{
-                background-color: {ACCENT_PRIMARY};
-                color: {BG_PRIMARY};
-                border: none;
-                border-radius: 10px;
-                padding: 0 22px;
-                font-size: 14px;
-                font-weight: 700;
-            }}
-            QPushButton:hover {{ background-color: {ACCENT_PRIMARY_HOVER}; }}
-        """
-        )
-        navbar_layout.addWidget(self.add_btn)
-        root.addWidget(navbar)
-
-        # ── Content area ────────────────────────────────────
-        content = QWidget()
-        content.setStyleSheet(f"background-color: {BG_PRIMARY};")
-        content_layout = QVBoxLayout(content)
-        content_layout.setContentsMargins(28, 24, 28, 16)
-        content_layout.setSpacing(16)
-
+        # ── Grid scroll area ──────────────────────────────────
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setStyleSheet("background-color: transparent; border: none;")
@@ -337,17 +400,18 @@ class MainWindow(QMainWindow):
         self.grid_container = QWidget()
         self.grid_container.setStyleSheet("background-color: transparent;")
         self.grid_layout = QGridLayout(self.grid_container)
-        self.grid_layout.setSpacing(20)
-        self.grid_layout.setContentsMargins(0, 0, 0, 0)
+        self.grid_layout.setSpacing(16)
+        self.grid_layout.setContentsMargins(28, 24, 28, 24)
+        self.grid_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.scroll_area.setWidget(self.grid_container)
-        content_layout.addWidget(self.scroll_area, stretch=1)
-        root.addWidget(content, stretch=1)
+        main_vbox.addWidget(self.scroll_area, stretch=1)
+        root.addWidget(main_area, stretch=1)
 
-        self.setStyleSheet(APP_STYLESHEET)
-        self.add_btn.clicked.connect(self.open_create_dialog)
-
+        # ── Status bar ────────────────────────────────────────
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
+
+        self.setStyleSheet(APP_STYLESHEET)
         self._update_status_bar()
 
     def load_commands(self) -> None:
@@ -371,14 +435,29 @@ class MainWindow(QMainWindow):
             session.close()
 
     def filter_commands(self, text: str) -> None:
-        text = text.lower()
+        self._filter_text = text.lower()
+        self._apply_filter()
+
+    def _set_filter_state(self, state: str) -> None:
+        self._filter_state = state
+        self.page_title.setText(f"{state} Commands" if state != "All" else "All Commands")
+        for lbl, btn in self._filter_btns.items():
+            btn.setStyleSheet(sidebar_btn_stylesheet(active=(lbl == state)))
+        self._apply_filter()
+
+    def _apply_filter(self) -> None:
         for card in self._cards.values():
-            match = (
-                text in card.command_obj.name.lower()
-                or (card.command_obj.description and text in card.command_obj.description.lower())
-                or any(text in t.lower() for t in (card.command_obj.tags or []))
+            text_ok = (
+                not self._filter_text
+                or self._filter_text in card.command_obj.name.lower()
+                or (card.command_obj.description and self._filter_text in card.command_obj.description.lower())
+                or any(self._filter_text in t.lower() for t in (card.command_obj.tags or []))
             )
-            card.setVisible(match)
+            state_ok = (
+                self._filter_state == "All"
+                or card._state == self._filter_state
+            )
+            card.setVisible(text_ok and state_ok)
 
     def add_command_card(self, command: Command, index: int) -> None:
         card = CommandCard(command)
@@ -425,7 +504,21 @@ class MainWindow(QMainWindow):
 
     def _update_status_bar(self) -> None:
         count = len(self._running_ids)
-        self.status_bar.showMessage(f"Running: {count} process(es)")
+        if count > 0:
+            self.running_lbl.setStyleSheet(
+                f"font-size: 12px; color: {GREEN};"
+                f"background: transparent; border: none; padding: 4px 0; font-weight: 600;"
+            )
+            self.running_lbl.setText(f"{count} running")
+        else:
+            self.running_lbl.setStyleSheet(
+                f"font-size: 12px; color: {TEXT_SECONDARY};"
+                f"background: transparent; border: none; padding: 4px 0;"
+            )
+            self.running_lbl.setText("0 running")
+        self.status_bar.showMessage(
+            f"  {count} process(es) running  —  {len(self._cards)} command(s) loaded"
+        )
 
     def _on_item_double_clicked(self, item) -> None:
         pass
