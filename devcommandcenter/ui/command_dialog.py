@@ -139,7 +139,7 @@ class CommandDialog(QDialog):
         lbl_name = QLabel("Name *")
         lbl_name.setStyleSheet(label_style)
         self.name_input = QLineEdit()
-        self.name_input.setPlaceholderText("e.g.  Start dev server")
+        self.name_input.setPlaceholderText("e.g. Start dev server")
         self.name_input.setMinimumHeight(38)
         form.addRow(lbl_name, self.name_input)
 
@@ -172,7 +172,7 @@ class CommandDialog(QDialog):
         lbl_cmd = QLabel("Command *")
         lbl_cmd.setStyleSheet(label_style)
         self.command_input = QLineEdit()
-        self.command_input.setPlaceholderText("npm, python, docker...")
+        self.command_input.setPlaceholderText("Executable name, e.g. npm")
         self.command_input.setMinimumHeight(38)
         self.command_input.setStyleSheet(
             f"QLineEdit {{ background-color: {BG_INPUT}; color: {TEXT_PRIMARY};"
