@@ -7,6 +7,19 @@ from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import QApplication
 
 from devcommandcenter.database.connection import init_db, SessionLocal
+
+
+def _set_windows_app_id() -> None:
+    """Tell Windows to treat this process as its own app so the taskbar
+    shows our icon instead of the generic python.exe icon."""
+    try:
+        import ctypes
+        app_id = "MathiasPaulenko.DevCommandCenter.1.0"
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
+    except Exception:
+        pass
+
+
 from devcommandcenter.services.command_service import CommandService
 from devcommandcenter.ui.main_window import MainWindow
 
@@ -53,6 +66,7 @@ def _load_icon() -> QIcon:
 
 
 def main() -> None:
+    _set_windows_app_id()
     init_db()
     seed_if_empty()
     app = QApplication(sys.argv)
