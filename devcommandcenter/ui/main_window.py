@@ -123,8 +123,8 @@ class CommandCard(QWidget):
             f"QPushButton:disabled {{ color: {TEXT_DISABLED}; }}"
         )
         body_layout = QVBoxLayout(body)
-        body_layout.setContentsMargins(20, 18, 20, 18)
-        body_layout.setSpacing(10)
+        body_layout.setContentsMargins(22, 22, 22, 22)
+        body_layout.setSpacing(14)
         outer.addWidget(body, stretch=1)
 
         # ── Name + badge row ──────────────────────────────────
@@ -196,7 +196,7 @@ class CommandCard(QWidget):
         # ── Divider ───────────────────────────────────────────
         div = QFrame()
         div.setFrameShape(QFrame.Shape.HLine)
-        div.setStyleSheet(f"background: {BORDER}; border: none; max-height: 1px; margin: 4px 0;")
+        div.setStyleSheet(f"background: {BORDER}; border: none; max-height: 1px; margin: 8px 0;")
         body_layout.addWidget(div)
 
         # ── Run / Stop ────────────────────────────────────────
@@ -241,11 +241,11 @@ class CommandCard(QWidget):
         )
 
         sec_row1 = QHBoxLayout()
-        sec_row1.setSpacing(6)
+        sec_row1.setSpacing(8)
         self.logs_btn = QPushButton("Logs")
-        self.logs_btn.setMinimumHeight(30)
+        self.logs_btn.setMinimumHeight(34)
         self.history_btn = QPushButton("History")
-        self.history_btn.setMinimumHeight(30)
+        self.history_btn.setMinimumHeight(34)
         self.logs_btn.setStyleSheet(sec_style)
         self.history_btn.setStyleSheet(sec_style)
         for b in (self.logs_btn, self.history_btn):
@@ -255,19 +255,19 @@ class CommandCard(QWidget):
         body_layout.addLayout(sec_row1)
 
         sec_row2 = QHBoxLayout()
-        sec_row2.setSpacing(6)
+        sec_row2.setSpacing(8)
         self.edit_btn = QPushButton("Edit")
-        self.edit_btn.setMinimumHeight(30)
+        self.edit_btn.setMinimumHeight(34)
         self.duplicate_btn = QPushButton("Duplicate")
-        self.duplicate_btn.setMinimumHeight(30)
+        self.duplicate_btn.setMinimumHeight(34)
         self.delete_btn = QPushButton("Delete")
-        self.delete_btn.setMinimumHeight(30)
+        self.delete_btn.setMinimumHeight(34)
         self.edit_btn.setStyleSheet(sec_style)
         self.duplicate_btn.setStyleSheet(sec_style)
         self.delete_btn.setStyleSheet(
             f"QPushButton {{ background-color: {BG_ELEVATED}; color: {RED};"
             f"border: 1px solid {BORDER}; border-radius: 6px;"
-            f"padding: 5px 10px; font-size: 11px; font-weight: 500; }}"
+            f"padding: 6px 12px; font-size: 11px; font-weight: 500; }}"
             f"QPushButton:hover {{ background-color: {RED_FILL}; color: #ffffff; border-color: {RED_FILL}; }}"
         )
         for b in (self.edit_btn, self.duplicate_btn, self.delete_btn):
@@ -277,7 +277,7 @@ class CommandCard(QWidget):
         sec_row2.addWidget(self.delete_btn)
         body_layout.addLayout(sec_row2)
 
-        self.setFixedSize(320, 300)
+        self.setFixedSize(320, 340)
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
     def update_status(self, state: str) -> None:
@@ -759,8 +759,8 @@ class MainWindow(QMainWindow):
         self.grid_container = QWidget()
         self.grid_container.setStyleSheet("background-color: transparent;")
         self.grid_layout = QGridLayout(self.grid_container)
-        self.grid_layout.setSpacing(16)
-        self.grid_layout.setContentsMargins(28, 24, 28, 24)
+        self.grid_layout.setSpacing(20)
+        self.grid_layout.setContentsMargins(32, 28, 32, 28)
         self.grid_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.scroll_area.setWidget(self.grid_container)
         main_vbox.addWidget(self.scroll_area, stretch=1)
