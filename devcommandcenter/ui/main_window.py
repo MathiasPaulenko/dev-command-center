@@ -1,9 +1,7 @@
 import json
-from datetime import datetime
 
-from PySide6.QtCore import QCoreApplication, Qt, Slot
+from PySide6.QtCore import QCoreApplication, Slot
 from PySide6.QtWidgets import (
-    QApplication,
     QDialog,
     QFileDialog,
     QHBoxLayout,
@@ -14,9 +12,7 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QMessageBox,
     QPushButton,
-    QSplitter,
     QStatusBar,
-    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -28,6 +24,7 @@ from devcommandcenter.services.command_service import CommandService
 from devcommandcenter.services.execution_log_service import ExecutionLogService
 from devcommandcenter.services.process_service import ProcessService
 from devcommandcenter.ui.command_dialog import CommandDialog
+from devcommandcenter.ui.log_window import LogWindow
 from devcommandcenter.ui.theme import (
     ACCENT_DANGER,
     ACCENT_DANGER_HOVER,
@@ -40,7 +37,6 @@ from devcommandcenter.ui.theme import (
     BG_PRIMARY,
     BORDER,
     BORDER_HOVER,
-    DIALOG_STYLESHEET,
     STATUS_FAILED,
     STATUS_RUNNING,
     STATUS_STOPPED,
@@ -173,11 +169,10 @@ class MainWindow(QMainWindow):
         self.resize(900, 600)
         self.process_service = ProcessService()
         self.process_service.stateChanged.connect(self.on_state_changed)
-        self.process_service.outputReady.connect(self.on_output_ready)
-        self.process_service.errorReady.connect(self.on_error_ready)
         self.process_service.logReady.connect(self.on_log_ready)
         self._command_names: dict[int, str] = {}
         self._running_ids: set[int] = set()
+        self._log_windows: dict[int, LogWindow] = {}
         self.setup_ui()
         self.load_commands()
         self._auto_run_commands()
@@ -199,17 +194,9 @@ class MainWindow(QMainWindow):
 
         central = QWidget()
         self.setCentralWidget(central)
-        layout = QHBoxLayout(central)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
-
-        splitter = QSplitter(Qt.Orientation.Horizontal)
-        layout.addWidget(splitter)
-
-        left_widget = QWidget()
-        left_layout = QVBoxLayout(left_widget)
-        left_layout.setContentsMargins(16, 16, 16, 16)
-        left_layout.setSpacing(12)
+        layout = QVBoxLayout(central)
+        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(12)
 
         header = QHBoxLayout()
         header_label = QLabel("Commands")
@@ -233,41 +220,16 @@ class MainWindow(QMainWindow):
         """
         )
         header.addWidget(self.add_btn)
-        left_layout.addLayout(header)
+        layout.addLayout(header)
 
         self.search_box = QLineEdit()
         self.search_box.setPlaceholderText("Search commands...")
         self.search_box.textChanged.connect(self.filter_commands)
-        left_layout.addWidget(self.search_box)
+        layout.addWidget(self.search_box)
 
         self.list_widget = QListWidget()
         self.list_widget.setSpacing(8)
-        left_layout.addWidget(self.list_widget, stretch=1)
-        splitter.addWidget(left_widget)
-
-        right_widget = QWidget()
-        right_layout = QVBoxLayout(right_widget)
-        right_layout.setContentsMargins(16, 16, 16, 16)
-        right_layout.setSpacing(12)
-
-        self.logs_area = QTextEdit()
-        self.logs_area.setReadOnly(True)
-
-        log_header = QHBoxLayout()
-        log_label = QLabel("Logs")
-        log_label.setStyleSheet(
-            f"font-size: 18px; font-weight: bold; color: {TEXT_PRIMARY};"
-        )
-        log_header.addWidget(log_label)
-        log_header.addStretch()
-        self.clear_logs_btn = QPushButton("Clear")
-        self.clear_logs_btn.setFixedWidth(60)
-        self.clear_logs_btn.clicked.connect(self.logs_area.clear)
-        log_header.addWidget(self.clear_logs_btn)
-        right_layout.addLayout(log_header)
-        right_layout.addWidget(self.logs_area)
-        splitter.addWidget(right_widget)
-        splitter.setSizes([600, 300])
+        layout.addWidget(self.list_widget, stretch=1)
 
         self.setStyleSheet(APP_STYLESHEET)
         self.add_btn.clicked.connect(self.open_create_dialog)
@@ -331,15 +293,13 @@ class MainWindow(QMainWindow):
         if ok:
             self._running_ids.add(command.id)
             self._update_status_bar()
-            self._append_log(f"[Run] {command.name}")
         else:
-            self._append_log(f"[Already running] {command.name}")
+            QMessageBox.information(self, "Info", f"'{command.name}' is already running.")
 
     def stop_command(self, command: Command) -> None:
         self.process_service.stop(command.id)
         self._running_ids.discard(command.id)
         self._update_status_bar()
-        self._append_log(f"[Stop] {command.name}")
 
     @Slot(str, str)
     def on_state_changed(self, command_id: str, state: str) -> None:
@@ -350,24 +310,6 @@ class MainWindow(QMainWindow):
         elif state in ("Stopped", "Failed"):
             self._running_ids.discard(cid)
         self._update_status_bar()
-
-    @Slot(str, str)
-    def on_output_ready(self, command_id: str, text: str) -> None:
-        name = self._command_names.get(int(command_id), f"#{command_id}")
-        for line in text.rstrip().splitlines():
-            self._append_log(f"[{name}] {line}")
-
-    @Slot(str, str)
-    def on_error_ready(self, command_id: str, text: str) -> None:
-        name = self._command_names.get(int(command_id), f"#{command_id}")
-        for line in text.rstrip().splitlines():
-            self._append_log(f'<span style="color:#f44336">[{name}] {line}</span>')
-
-    def _append_log(self, message: str) -> None:
-        ts = datetime.now().strftime("%H:%M:%S")
-        self.logs_area.append(f"[{ts}] {message}")
-        sb = self.logs_area.verticalScrollBar()
-        sb.setValue(sb.maximum())
 
     def _update_status_bar(self) -> None:
         count = len(self._running_ids)
@@ -423,47 +365,16 @@ class MainWindow(QMainWindow):
                 session.close()
 
     def show_logs_for_command(self, command: Command) -> None:
-        session = SessionLocal()
-        try:
-            service = ExecutionLogService(session)
-            logs = service.get_by_command_id(command.id)
-            dialog = QDialog(self)
-            dialog.setStyleSheet(DIALOG_STYLESHEET)
-            dialog.setWindowTitle(f"Logs: {command.name}")
-            dialog.resize(600, 400)
-            layout = QVBoxLayout(dialog)
-            layout.setContentsMargins(16, 16, 16, 16)
-            layout.setSpacing(12)
+        if command.id in self._log_windows:
+            win = self._log_windows[command.id]
+            win.raise_()
+            win.activateWindow()
+            return
 
-            header = QHBoxLayout()
-            header_label = QLabel("Execution History")
-            header_label.setStyleSheet(
-                f"font-size: 15px; font-weight: bold; color: {TEXT_PRIMARY};"
-            )
-            header.addWidget(header_label)
-            header.addStretch()
-            copy_btn = QPushButton("Copy")
-            copy_btn.setFixedWidth(60)
-            header.addWidget(copy_btn)
-            layout.addLayout(header)
-            text = QTextEdit()
-            text.setReadOnly(True)
-            copy_btn.clicked.connect(lambda: QApplication.clipboard().setText(text.toPlainText()))
-            if logs:
-                lines = []
-                for log in logs:
-                    lines.append(f"--- {log.started_at} | exit={log.exit_code} ---")
-                    if log.output:
-                        lines.append(log.output)
-                    if log.error:
-                        lines.append(f"[stderr]\n{log.error}")
-                text.setPlainText("\n".join(lines))
-            else:
-                text.setPlainText("No execution logs yet.")
-            layout.addWidget(text)
-            dialog.exec()
-        finally:
-            session.close()
+        win = LogWindow(command.id, command.name, self.process_service, self)
+        win.finished.connect(lambda: self._log_windows.pop(command.id, None))
+        self._log_windows[command.id] = win
+        win.show()
 
     def _auto_run_commands(self) -> None:
         for cmd in getattr(self, "_all_commands", []):
