@@ -1,3 +1,5 @@
+import shutil
+import sys
 from enum import Enum
 from typing import Dict
 
@@ -24,9 +26,10 @@ class ManagedProcess(QObject):
         self._stdout_buffer: list[str] = []
         self._stderr_buffer: list[str] = []
 
+        resolved_command, resolved_args = self._resolve_command(command, arguments)
         self.process = QProcess(self)
-        self.process.setProgram(command)
-        self.process.setArguments(arguments)
+        self.process.setProgram(resolved_command)
+        self.process.setArguments(resolved_args)
         if working_directory:
             self.process.setWorkingDirectory(working_directory)
 
@@ -91,7 +94,28 @@ class ManagedProcess(QObject):
         self._stdout_buffer.clear()
         self._stderr_buffer.clear()
 
+    def _resolve_command(self, command: str, arguments: list) -> tuple[str, list]:
+        if sys.platform == "win32" and not command.lower().endswith(".exe"):
+            exe_path = shutil.which(command)
+            if exe_path and exe_path.lower().endswith(".exe"):
+                return exe_path, arguments
+            return "cmd.exe", ["/c", command, *arguments]
+        return command, arguments
+
     def _on_error(self, error: QProcess.ProcessError) -> None:
+        error_msg = {
+            QProcess.ProcessError.FailedToStart: (
+                f"Failed to start '{self.process.program()}': "
+                "program not found or insufficient permissions."
+            ),
+            QProcess.ProcessError.Crashed: "Process crashed unexpectedly.",
+            QProcess.ProcessError.Timedout: "Process timed out.",
+            QProcess.ProcessError.ReadError: "Read error from process.",
+            QProcess.ProcessError.WriteError: "Write error to process.",
+            QProcess.ProcessError.UnknownError: f"Unknown process error ({error}).",
+        }.get(error, f"Process error: {error}")
+        self._stderr_buffer.append(error_msg)
+        self.errorReady.emit(self.command_id, error_msg)
         self.state = ProcessState.FAILED
         self.stateChanged.emit(self.command_id, self.state.value)
         self.logReady.emit(
