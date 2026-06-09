@@ -5,7 +5,7 @@ from PySide6.QtGui import QIcon, QPainter, QPixmap
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import QApplication
 
-from devcommandcenter.config import BASE_DIR
+from devcommandcenter.config import resource_path
 from devcommandcenter.database.connection import init_db, SessionLocal
 from devcommandcenter.services.command_service import CommandService
 from devcommandcenter.ui.main_window import MainWindow
@@ -47,7 +47,7 @@ def seed_if_empty() -> None:
 
 def _load_icon() -> QIcon:
     icon = QIcon()
-    svg_path = BASE_DIR / "assets" / "logo.svg"
+    svg_path = resource_path("assets/logo.svg")
     if not svg_path.exists():
         return icon
     renderer = QSvgRenderer(str(svg_path))

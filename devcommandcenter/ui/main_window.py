@@ -1,8 +1,6 @@
 import json
 from datetime import datetime
 
-from pathlib import Path
-
 from PySide6.QtCore import QCoreApplication, Qt, Signal, Slot
 from PySide6.QtGui import QPainter, QPixmap
 from PySide6.QtSvg import QSvgRenderer
@@ -29,7 +27,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from devcommandcenter.config import APP_NAME, APP_VERSION
+from devcommandcenter.config import APP_NAME, APP_VERSION, resource_path
 from devcommandcenter.database.connection import SessionLocal, init_db
 from devcommandcenter.database.models import Command, ExecutionLog
 
@@ -554,7 +552,7 @@ class AboutDialog(QDialog):
         root.addWidget(footer)
 
     def _load_logo(self, size: int) -> QPixmap:
-        svg_path = Path(__file__).parent.parent.parent / "assets" / "logo.svg"
+        svg_path = resource_path("assets/logo.svg")
         if not svg_path.exists():
             return QPixmap(size, size)
         renderer = QSvgRenderer(str(svg_path))
