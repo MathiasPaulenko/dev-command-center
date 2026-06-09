@@ -1,5 +1,7 @@
 """Real-time log window for a single command execution."""
 
+import html
+import re
 from datetime import datetime
 
 from PySide6.QtCore import Slot
@@ -186,23 +188,71 @@ class LogWindow(QDialog):
         for line in text.rstrip().splitlines():
             prefix = f"[{ts}]"
             if error:
-                self.output.append(f'<span style="color:#f85149">{prefix} {line}</span>')
+                escaped = html.escape(line)
+                self.output.append(f'<span style="color:#f85149">{prefix} {escaped}</span>')
             else:
-                self.output.append(f"{prefix} {line}")
+                colored = self._colorize(line)
+                self.output.append(f"{prefix} {colored}")
         sb = self.output.verticalScrollBar()
         sb.setValue(sb.maximum())
 
     def _append_raw(self, text: str, error: bool = False) -> None:
         for line in text.rstrip().splitlines():
             if error:
-                self.output.append(f'<span style="color:#f85149">{line}</span>')
+                escaped = html.escape(line)
+                self.output.append(f'<span style="color:#f85149">{escaped}</span>')
             else:
-                self.output.append(line)
+                self.output.append(self._colorize(line))
 
     def _append_info(self, text: str) -> None:
+        escaped = html.escape(text)
         self.output.append(
-            f'<span style="color:{TEXT_SECONDARY}; font-style:italic">{text}</span>'
+            f'<span style="color:{TEXT_SECONDARY}; font-style:italic">{escaped}</span>'
         )
+
+    _ANSI_RE = re.compile(r'\x1b\[([0-9;]*)m')
+    _ANSI_COLORS: dict[int, str] = {
+        30: "#000000", 31: "#f85149", 32: "#3fb950", 33: "#d29922",
+        34: "#58a6ff", 35: "#f778ba", 36: "#39c5cf", 37: "#e6edf3",
+        90: "#6e7681", 91: "#ff7b72", 92: "#56d364", 93: "#e3b341",
+        94: "#79c0ff", 95: "#f778ba", 96: "#39c5cf", 97: "#ffffff",
+    }
+
+    def _colorize(self, text: str) -> str:
+        text = html.escape(text)
+        return self._ansi_to_html(text)
+
+    def _ansi_to_html(self, text: str) -> str:
+        result: list[str] = []
+        i = 0
+        open_span = False
+        while i < len(text):
+            if text[i] == '\x1b' and i + 1 < len(text) and text[i + 1] == '[':
+                j = i + 2
+                while j < len(text) and text[j] != 'm':
+                    j += 1
+                if j < len(text):
+                    codes_str = text[i + 2:j]
+                    if open_span:
+                        result.append('</span>')
+                        open_span = False
+                    if codes_str and codes_str != "0":
+                        parts = codes_str.split(";")
+                        color: str | None = None
+                        for p in parts:
+                            if p.isdigit():
+                                n = int(p)
+                                color = self._ANSI_COLORS.get(n)
+                        if color:
+                            result.append(f'<span style="color:{color}">')
+                            open_span = True
+                    i = j + 1
+                    continue
+            result.append(text[i])
+            i += 1
+        if open_span:
+            result.append('</span>')
+        return "".join(result)
 
     def _load_last_execution(self) -> None:
         if self.process_service.get_state(int(self.command_id)) == "Running":
