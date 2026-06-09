@@ -197,7 +197,7 @@ class CommandDialog(QDialog):
     def get_data(self) -> dict:
         data = {
             "name": self.name_input.text().strip(),
-            "description": self.desc_input.text().strip() or None,
+            "description": self.desc_input.toPlainText().strip() or None,
             "working_directory": self.wd_input.text().strip() or None,
             "command": self.command_input.text().strip(),
             "arguments": [],

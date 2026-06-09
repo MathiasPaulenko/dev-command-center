@@ -944,6 +944,8 @@ class MainWindow(QMainWindow):
                 service = CommandService(session)
                 service.create(dialog.get_data())
                 self.load_commands()
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to create command:\n{e}")
             finally:
                 session.close()
 
@@ -955,6 +957,8 @@ class MainWindow(QMainWindow):
                 service = CommandService(session)
                 service.update(command.id, dialog.get_data())
                 self.load_commands()
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to update command:\n{e}")
             finally:
                 session.close()
 
@@ -1023,6 +1027,10 @@ class MainWindow(QMainWindow):
                 service = CommandService(session)
                 if service.delete(command.id):
                     self.load_commands()
+                else:
+                    QMessageBox.warning(self, "Warning", "Command could not be deleted.")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to delete command:\n{e}")
             finally:
                 session.close()
 
