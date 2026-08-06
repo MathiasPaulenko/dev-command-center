@@ -9,7 +9,7 @@ description = "Desktop app for managing and running development commands"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
-    {name = "Mathias Paulenko Echeverz"},
+    {name = "Mathias Paulenko", email = "mathias.paulenko@outlook.com"},
 ]
 keywords = ["developer-tools", "qt", "pyside6", "command-runner", "productivity"]
 classifiers = [
