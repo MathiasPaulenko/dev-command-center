@@ -43,7 +43,7 @@ pyinstaller ^
     --hidden-import PySide6.QtWidgets ^
     --hidden-import sqlalchemy.ext.baked ^
     --hidden-import sqlalchemy.sql.default_comparator ^
-    devcommandcenter/cli.py
+    main.py
 
 if %errorlevel% neq 0 (
     echo ERROR: PyInstaller build failed.

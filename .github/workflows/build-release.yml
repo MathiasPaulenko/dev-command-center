@@ -17,12 +17,15 @@ jobs:
           - os: windows-latest
             suffix: .exe
             artifact_name: DevCommandCenter-windows.exe
+            add_data: "devcommandcenter/assets;devcommandcenter/assets"
           - os: ubuntu-latest
             suffix: ""
             artifact_name: DevCommandCenter-linux
+            add_data: "devcommandcenter/assets:devcommandcenter/assets"
           - os: macos-latest
             suffix: ""
             artifact_name: DevCommandCenter-macos
+            add_data: "devcommandcenter/assets:devcommandcenter/assets"
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -47,6 +50,11 @@ jobs:
             --name DevCommandCenter \
             --onefile \
             --windowed \
+            --add-data "${{ matrix.add_data }}" \
+            --hidden-import PySide6.QtSvg \
+            --hidden-import PySide6.QtCore \
+            --hidden-import PySide6.QtGui \
+            --hidden-import PySide6.QtWidgets \
             --hidden-import sqlalchemy.ext.baked \
             --hidden-import sqlalchemy.sql.default_comparator \
             main.py

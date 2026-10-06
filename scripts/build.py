@@ -36,11 +36,19 @@ def build() -> None:
 
     print(f"Building {output_name} for {platform.system()}...")
 
+    # --add-data keeps the package layout (devcommandcenter/assets) so
+    # config.resource_path() finds bundled files under sys._MEIPASS
+    sep = ";" if platform.system() == "Windows" else ":"
     cmd = [
         sys.executable, "-m", "PyInstaller",
         "--name", output_name,
         "--onefile",
         "--windowed",
+        "--add-data", f"devcommandcenter/assets{sep}devcommandcenter/assets",
+        "--hidden-import", "PySide6.QtSvg",
+        "--hidden-import", "PySide6.QtCore",
+        "--hidden-import", "PySide6.QtGui",
+        "--hidden-import", "PySide6.QtWidgets",
         "--hidden-import", "sqlalchemy.ext.baked",
         "--hidden-import", "sqlalchemy.sql.default_comparator",
         str(main_script),
