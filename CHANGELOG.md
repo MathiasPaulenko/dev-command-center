@@ -2,7 +2,41 @@
 
 All notable changes to DevCommandCenter will be documented in this file.
 
-## [1.2.0] - 2026-06-08
+## [1.3.0] - 2026-10-06
+
+### Fixed
+
+- Reopening a log window no longer leaves it disconnected from live output (windows are now deleted on close and recreated fresh).
+- Log window now reflects the real process state when opened (status label and Stop button are initialized correctly).
+- Manually stopping a command on Windows no longer marks it as Failed.
+- A crashing process no longer writes duplicate log entries.
+- `started_at` in execution logs now records the real start time instead of the insert time.
+- Arguments/env vars are validated as JSON array/object in the command dialog.
+- Command description and env vars no longer get mangled when they contain HTML-like text.
+- App icon and About logo are no longer cropped at small sizes (SVG now renders scaled to the target rect).
+- Deleting a command now also removes its execution logs and closes its log window.
+- Import validates that the JSON is an array of commands with `name` and `command`.
+- ANSI escape sequences that are not color codes no longer leak as garbage into the log output.
+- Log lines split across output chunks no longer get fragmented timestamps.
+- Command names and descriptions can no longer inject rich text into labels.
+- The database no longer lives inside the PyInstaller temp dir (it moved to the user data dir for packaged builds).
+- Bundled assets now actually ship in the executable (`--add-data` in all build paths, matching `resource_path`).
+- `build.bat` now builds `main.py` so package imports resolve.
+- The status bar command count now refreshes after create/delete/import (it only updated on state changes before).
+- Timestamps are stored as naive local time consistently, so "Last run" relative times are correct in any timezone.
+
+### Changed
+
+- Added `scripts/manual_e2e.py` — a pywinauto/UIA walkthrough that drives the real GUI (run/stop, log windows, dialogs, filters, delete) and saves screenshots to `e2e_artifacts/`.
+
+- Split `main_window.py` into `command_card.py`, `history_dialog.py`, and `about_dialog.py`.
+- `__version__` now derives from `APP_VERSION` (single source of truth).
+- Tests run against an isolated database (`DCC_DATABASE_URL`) instead of the real one.
+
+### Removed
+
+- Duplicate release workflow (`release.yml`); `build-release.yml` now handles builds and the GitHub Release.
+- Dead code: unused theme aliases, `card_stylesheet`, `tag_chip_stylesheet`, `_command_names`, unused imports.
 
 ### Added
 

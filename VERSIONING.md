@@ -18,4 +18,4 @@ DevCommandCenter follows [Semantic Versioning](https://semver.org/) (`MAJOR.MINO
 
 ## Current Version
 
-`0.2.0`
+`1.3.0`
