@@ -1,4 +1,4 @@
-from typing import List, Optional
+from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
@@ -9,10 +9,10 @@ class CommandService:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def get_all(self) -> List[Command]:
+    def get_all(self) -> list[Command]:
         return self.session.query(Command).order_by(Command.created_at.desc()).all()
 
-    def get_by_id(self, command_id: int) -> Optional[Command]:
+    def get_by_id(self, command_id: int) -> Command | None:
         return self.session.query(Command).filter(Command.id == command_id).first()
 
     def create(self, data: dict) -> Command:
@@ -22,7 +22,7 @@ class CommandService:
         self.session.refresh(command)
         return command
 
-    def update(self, command_id: int, data: dict) -> Optional[Command]:
+    def update(self, command_id: int, data: dict) -> Command | None:
         command = self.get_by_id(command_id)
         if not command:
             return None

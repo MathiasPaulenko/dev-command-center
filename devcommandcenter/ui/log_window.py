@@ -1,10 +1,11 @@
 """Real-time log window for a single command execution."""
 
+from __future__ import annotations
+
 import html
-import re
 from datetime import datetime
 
-from PySide6.QtCore import Slot
+from PySide6.QtCore import Qt, Slot
 from PySide6.QtWidgets import (
     QDialog,
     QHBoxLayout,
@@ -24,6 +25,7 @@ from devcommandcenter.ui.theme import (
     BG_INPUT,
     BORDER,
     BORDER_HOVER,
+    LOG_ERROR,
     RED_FILL,
     RED_HOVER,
     STATUS_FAILED,
@@ -49,11 +51,15 @@ class LogWindow(QDialog):
         self.process_service = process_service
         self.setWindowTitle(f"Logs: {command_name}")
         self.resize(800, 500)
+        # Delete on close so a reopened window reconnects its signals fresh.
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self._is_running = False
         self._signals_connected = False
+        self._pending_out = ""
+        self._pending_err = ""
         self.setup_ui()
         self.connect_signals()
-        self.update_title()
+        self._on_state_changed(self.command_id, process_service.get_state(command_id))
         self._load_last_execution()
 
     def setup_ui(self) -> None:
@@ -64,7 +70,7 @@ class LogWindow(QDialog):
         header = QHBoxLayout()
         header.setSpacing(12)
 
-        title = QLabel(f"<b>{self.command_name}</b>")
+        title = QLabel(f"<b>{html.escape(self.command_name)}</b>")
         title.setStyleSheet(
             f"font-size: 16px; color: {TEXT_PRIMARY}; background: transparent; border: none;"
         )
@@ -81,6 +87,7 @@ class LogWindow(QDialog):
 
         self.stop_btn = QPushButton("Stop")
         self.stop_btn.setMinimumHeight(34)
+        self.stop_btn.setEnabled(False)
         self.stop_btn.setStyleSheet(
             f"""
             QPushButton {{
@@ -165,8 +172,12 @@ class LogWindow(QDialog):
         self._is_running = state == "Running"
         if state == "Running" and not was_running:
             self.output.clear()
+            self._pending_out = ""
+            self._pending_err = ""
             ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             self._append_info(f"── New execution started · {ts} ──")
+        elif not self._is_running:
+            self._flush_pending()
         self._set_status_label(state)
         self.stop_btn.setEnabled(self._is_running)
         self.update_title()
@@ -175,32 +186,55 @@ class LogWindow(QDialog):
     def _on_output(self, command_id: str, text: str) -> None:
         if command_id != self.command_id:
             return
-        self._append(text)
+        self._pending_out += text
+        self._pending_out = self._append_lines(self._pending_out, error=False)
 
     @Slot(str, str)
     def _on_error(self, command_id: str, text: str) -> None:
         if command_id != self.command_id:
             return
-        self._append(text, error=True)
+        self._pending_err += text
+        self._pending_err = self._append_lines(self._pending_err, error=True)
 
-    def _append(self, text: str, error: bool = False) -> None:
+    def _append_lines(self, buffer: str, error: bool) -> str:
+        """Render complete lines and keep the trailing partial line buffered.
+
+        QProcess delivers arbitrary chunks; without buffering a line split
+        across two chunks would render as two timestamped lines.
+        """
+        lines = buffer.split("\n")
+        pending = lines.pop()
+        for line in lines:
+            self._append_line(line.rstrip("\r"), error)
+        if lines:
+            sb = self.output.verticalScrollBar()
+            sb.setValue(sb.maximum())
+        return pending
+
+    def _flush_pending(self) -> None:
+        if self._pending_out:
+            self._append_line(self._pending_out, error=False)
+            self._pending_out = ""
+        if self._pending_err:
+            self._append_line(self._pending_err, error=True)
+            self._pending_err = ""
+
+    def _append_line(self, line: str, error: bool = False) -> None:
         ts = datetime.now().strftime("%H:%M:%S")
-        for line in text.rstrip().splitlines():
-            prefix = f"[{ts}]"
-            if error:
-                escaped = html.escape(line)
-                self.output.append(f'<span style="color:#f85149">{prefix} {escaped}</span>')
-            else:
-                colored = self._colorize(line)
-                self.output.append(f"{prefix} {colored}")
-        sb = self.output.verticalScrollBar()
-        sb.setValue(sb.maximum())
+        prefix = f"[{ts}]"
+        if error:
+            self.output.append(
+                f'<span style="color:{LOG_ERROR}">{prefix} {self._colorize(line)}</span>'
+            )
+        else:
+            self.output.append(f"{prefix} {self._colorize(line)}")
 
     def _append_raw(self, text: str, error: bool = False) -> None:
         for line in text.rstrip().splitlines():
             if error:
-                escaped = html.escape(line)
-                self.output.append(f'<span style="color:#f85149">{escaped}</span>')
+                self.output.append(
+                    f'<span style="color:{LOG_ERROR}">{self._colorize(line)}</span>'
+                )
             else:
                 self.output.append(self._colorize(line))
 
@@ -210,7 +244,6 @@ class LogWindow(QDialog):
             f'<span style="color:{TEXT_SECONDARY}; font-style:italic">{escaped}</span>'
         )
 
-    _ANSI_RE = re.compile(r'\x1b\[([0-9;]*)m')
     _ANSI_COLORS: dict[int, str] = {
         30: "#000000", 31: "#f85149", 32: "#3fb950", 33: "#d29922",
         34: "#58a6ff", 35: "#f778ba", 36: "#39c5cf", 37: "#e6edf3",
@@ -227,26 +260,38 @@ class LogWindow(QDialog):
         i = 0
         open_span = False
         while i < len(text):
-            if text[i] == '\x1b' and i + 1 < len(text) and text[i + 1] == '[':
-                j = i + 2
-                while j < len(text) and text[j] != 'm':
-                    j += 1
-                if j < len(text):
-                    codes_str = text[i + 2:j]
-                    if open_span:
-                        result.append('</span>')
-                        open_span = False
-                    if codes_str and codes_str != "0":
-                        parts = codes_str.split(";")
-                        color: str | None = None
-                        for p in parts:
-                            if p.isdigit():
-                                n = int(p)
-                                color = self._ANSI_COLORS.get(n)
-                        if color:
-                            result.append(f'<span style="color:{color}">')
-                            open_span = True
-                    i = j + 1
+            if text[i] == '\x1b' and i + 1 < len(text):
+                if text[i + 1] == '[':
+                    # CSI sequence: ends at a final byte in @-~
+                    j = i + 2
+                    while j < len(text) and not ('@' <= text[j] <= '~'):
+                        j += 1
+                    if j < len(text):
+                        final = text[j]
+                        codes_str = text[i + 2:j]
+                        if final == 'm':  # only SGR (colors) is supported
+                            if open_span:
+                                result.append('</span>')
+                                open_span = False
+                            if codes_str and codes_str != "0":
+                                color: str | None = None
+                                for p in codes_str.split(";"):
+                                    if p.isdigit():
+                                        color = self._ANSI_COLORS.get(int(p))
+                                if color:
+                                    result.append(f'<span style="color:{color}">')
+                                    open_span = True
+                        i = j + 1
+                        continue
+                elif text[i + 1] == ']':
+                    # OSC sequence: ends with BEL or ST (ESC \)
+                    j = i + 2
+                    while j < len(text) and text[j] != '\x07':
+                        if text[j] == '\x1b' and j + 1 < len(text) and text[j + 1] == '\\':
+                            j += 1
+                            break
+                        j += 1
+                    i = min(j + 1, len(text))
                     continue
             result.append(text[i])
             i += 1
@@ -255,7 +300,7 @@ class LogWindow(QDialog):
         return "".join(result)
 
     def _load_last_execution(self) -> None:
-        if self.process_service.get_state(int(self.command_id)) == "Running":
+        if self._is_running:
             return
 
         session = SessionLocal()
@@ -310,6 +355,8 @@ class LogWindow(QDialog):
 
     def _clear_output(self) -> None:
         self.output.clear()
+        self._pending_out = ""
+        self._pending_err = ""
 
     def update_title(self) -> None:
         prefix = "▶" if self._is_running else "⏹"
@@ -317,4 +364,5 @@ class LogWindow(QDialog):
 
     def closeEvent(self, event) -> None:
         self.disconnect_signals()
+        self.finished.emit(0)  # lets the owner drop the stale reference
         super().closeEvent(event)

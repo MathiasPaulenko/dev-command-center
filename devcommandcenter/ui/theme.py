@@ -15,36 +15,25 @@ TEXT_PRIMARY   = "#e6edf3"
 TEXT_SECONDARY = "#9da7b3"
 TEXT_DISABLED  = "#6e7681"
 
-ACCENT      = "#4493f8"
-ACCENT_FILL = "#1f6feb"
+ACCENT       = "#4493f8"
+ACCENT_FILL  = "#1f6feb"
 ACCENT_HOVER = "#388bfd"
 
 GREEN       = "#3fb950"
 GREEN_FILL  = "#238636"
 GREEN_HOVER = "#2ea043"
 
-RED         = "#ff7b72"
-RED_FILL    = "#da3633"
-RED_HOVER   = "#e5534b"
+RED       = "#ff7b72"
+RED_FILL  = "#da3633"
+RED_HOVER = "#e5534b"
 
-AMBER       = "#d29922"
+AMBER = "#d29922"
 
 STATUS_RUNNING = GREEN
 STATUS_STOPPED = TEXT_SECONDARY
 STATUS_FAILED  = RED
 
-CYAN                 = ACCENT
-ROSE                 = RED
-ORANGE               = AMBER
-BG_PRIMARY           = BG_BASE
-BG_SURFACE           = BG_SIDEBAR
-ACCENT_PRIMARY       = ACCENT
-ACCENT_PRIMARY_HOVER = ACCENT_HOVER
-ACCENT_SUCCESS       = GREEN
-ACCENT_SUCCESS_HOVER = GREEN_HOVER
-ACCENT_DANGER        = RED
-ACCENT_DANGER_HOVER  = RED_HOVER
-ACCENT_WARNING       = AMBER
+LOG_ERROR = "#f85149"  # stderr text inside log windows
 
 APP_STYLESHEET = f"""
 QMainWindow {{
@@ -81,9 +70,9 @@ QLineEdit {{
     border-radius: 8px;
     padding: 9px 14px;
     font-size: 13px;
-    selection-background-color: {CYAN}33;
+    selection-background-color: {ACCENT}33;
 }}
-QLineEdit:focus {{ border-color: {CYAN}; }}
+QLineEdit:focus {{ border-color: {ACCENT}; }}
 
 QTextEdit {{
     background-color: {BG_CODE};
@@ -94,7 +83,7 @@ QTextEdit {{
     font-family: "Cascadia Code", "JetBrains Mono", "Fira Code", "Consolas", monospace;
     font-size: 13px;
     line-height: 1.6;
-    selection-background-color: {CYAN}33;
+    selection-background-color: {ACCENT}33;
 }}
 
 QPushButton {{
@@ -159,44 +148,13 @@ QCheckBox::indicator {{
     background-color: {BG_INPUT};
 }}
 QCheckBox::indicator:checked {{
-    background-color: {CYAN};
-    border-color: {CYAN};
+    background-color: {ACCENT};
+    border-color: {ACCENT};
 }}
 QDialogButtonBox QPushButton {{
     min-width: 88px;
     min-height: 36px;
 }}
-"""
-
-
-def card_stylesheet() -> str:
-    return f"""
-    QWidget {{
-        background-color: {BG_CARD};
-        border: 1px solid {BORDER};
-        border-radius: 12px;
-    }}
-    QLabel {{
-        background: transparent;
-        border: none;
-        color: {TEXT_SECONDARY};
-    }}
-    QPushButton {{
-        background-color: {BG_ELEVATED};
-        color: {TEXT_SECONDARY};
-        border: 1px solid {BORDER};
-        border-radius: 7px;
-        padding: 7px 14px;
-        font-size: 12px;
-        font-weight: 500;
-    }}
-    QPushButton:hover {{
-        background-color: {BG_INPUT};
-        color: {TEXT_PRIMARY};
-        border-color: {BORDER_HOVER};
-    }}
-    QPushButton:pressed {{ background-color: {BG_SIDEBAR}; }}
-    QPushButton:disabled {{ color: {TEXT_DISABLED}; border-color: {BORDER}; }}
 """
 
 
@@ -210,17 +168,6 @@ def status_badge_stylesheet(color: str) -> str:
         f"font-size: 11px;"
         f"font-weight: 700;"
         f"letter-spacing: 0.5px;"
-    )
-
-
-def tag_chip_stylesheet() -> str:
-    return (
-        f"background-color: {BG_ELEVATED};"
-        f"color: #79c0ff;"  # light blue, ~8:1 on dark
-        f"border: 1px solid {BORDER};"
-        f"border-radius: 6px;"
-        f"padding: 2px 9px;"
-        f"font-size: 11px;"
     )
 
 

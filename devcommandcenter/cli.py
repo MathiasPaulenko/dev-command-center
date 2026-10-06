@@ -1,6 +1,7 @@
+import os
 import sys
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QIcon, QPainter, QPixmap
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import QApplication
@@ -32,14 +33,14 @@ def seed_if_empty() -> None:
                 "description": "Simple echo test",
                 "command": "python",
                 "arguments": ["-c", "import time; [print(f'Hello {i}') or time.sleep(0.5) for i in range(5)]"],
-                "working_directory": sys.path[0],
+                "working_directory": os.getcwd(),
             })
             service.create({
                 "name": "List Files",
                 "description": "List current directory",
                 "command": "python",
                 "arguments": ["-c", "import os; print('\\n'.join(os.listdir('.')))"],
-                "working_directory": sys.path[0],
+                "working_directory": os.getcwd(),
             })
     finally:
         session.close()
@@ -55,7 +56,9 @@ def _load_icon() -> QIcon:
         pixmap = QPixmap(size, size)
         pixmap.fill(Qt.GlobalColor.transparent)
         painter = QPainter(pixmap)
-        renderer.render(painter)
+        # scale the SVG to the target rect; render() without bounds would
+        # draw at defaultSize and clip anything smaller than it
+        renderer.render(painter, QRectF(0, 0, size, size))
         painter.end()
         icon.addPixmap(pixmap)
     return icon

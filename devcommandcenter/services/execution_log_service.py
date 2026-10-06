@@ -1,4 +1,4 @@
-from typing import List, Optional
+from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
@@ -16,7 +16,7 @@ class ExecutionLogService:
         self.session.refresh(log)
         return log
 
-    def get_by_command_id(self, command_id: int) -> List[ExecutionLog]:
+    def get_by_command_id(self, command_id: int) -> list[ExecutionLog]:
         return (
             self.session.query(ExecutionLog)
             .filter(ExecutionLog.command_id == command_id)
@@ -24,7 +24,7 @@ class ExecutionLogService:
             .all()
         )
 
-    def get_latest(self, command_id: int) -> Optional[ExecutionLog]:
+    def get_latest(self, command_id: int) -> ExecutionLog | None:
         return (
             self.session.query(ExecutionLog)
             .filter(ExecutionLog.command_id == command_id)

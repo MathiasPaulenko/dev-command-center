@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import json
-from typing import Optional
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
@@ -13,7 +14,6 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QMessageBox,
     QPushButton,
-    QSizePolicy,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -23,20 +23,17 @@ from devcommandcenter.database.models import Command
 from devcommandcenter.ui.theme import (
     BG_BASE,
     BG_CARD,
-    BG_ELEVATED,
     BG_INPUT,
     BORDER,
     BORDER_FOCUS,
-    BORDER_HOVER,
-    GREEN,
-    TEXT_DISABLED,
+    DIALOG_STYLESHEET,
     TEXT_PRIMARY,
     TEXT_SECONDARY,
 )
 
 
 class CommandDialog(QDialog):
-    def __init__(self, parent=None, command: Optional[Command] = None) -> None:
+    def __init__(self, parent=None, command: Command | None = None) -> None:
         super().__init__(parent)
         self.command = command
         self.setWindowTitle("Edit Command" if command else "New Command")
@@ -185,13 +182,16 @@ class CommandDialog(QDialog):
         footer_layout.addWidget(buttons)
         root.addWidget(footer)
 
+        self.setStyleSheet(DIALOG_STYLESHEET)
+
     def load_data(self, command: Command) -> None:
         self.name_input.setText(command.name or "")
-        self.desc_input.setText(command.description or "")
+        # setPlainText — setText would interpret stored text as HTML
+        self.desc_input.setPlainText(command.description or "")
         self.wd_input.setText(command.working_directory or "")
         self.command_input.setText(command.command or "")
         self.args_input.setText(json.dumps(command.arguments) if command.arguments else "")
-        self.env_input.setText(json.dumps(command.env_vars) if command.env_vars else "")
+        self.env_input.setPlainText(json.dumps(command.env_vars) if command.env_vars else "")
         self.auto_run_check.setChecked(command.auto_run or False)
 
     def get_data(self) -> dict:
@@ -207,13 +207,17 @@ class CommandDialog(QDialog):
         args_text = self.args_input.text().strip()
         if args_text:
             try:
-                data["arguments"] = json.loads(args_text)
+                parsed = json.loads(args_text)
+                if isinstance(parsed, list):
+                    data["arguments"] = parsed
             except json.JSONDecodeError:
                 pass
         env_text = self.env_input.toPlainText().strip()
         if env_text:
             try:
-                data["env_vars"] = json.loads(env_text)
+                parsed = json.loads(env_text)
+                if isinstance(parsed, dict):
+                    data["env_vars"] = parsed
             except json.JSONDecodeError:
                 pass
         return data
@@ -225,16 +229,18 @@ class CommandDialog(QDialog):
         args_text = self.args_input.text().strip()
         if args_text:
             try:
-                json.loads(args_text)
-            except json.JSONDecodeError:
+                if not isinstance(json.loads(args_text), list):
+                    raise ValueError
+            except (json.JSONDecodeError, ValueError):
                 QMessageBox.warning(self, "Validation", "Arguments must be a valid JSON array.")
                 return
         env_text = self.env_input.toPlainText().strip()
         if env_text:
             try:
-                json.loads(env_text)
-            except json.JSONDecodeError:
-                QMessageBox.warning(self, "Validation", "Environment variables must be valid JSON.")
+                if not isinstance(json.loads(env_text), dict):
+                    raise ValueError
+            except (json.JSONDecodeError, ValueError):
+                QMessageBox.warning(self, "Validation", "Environment variables must be a valid JSON object.")
                 return
         super().accept()
 

@@ -4,6 +4,13 @@ from typing import Optional
 from sqlalchemy import JSON, DateTime, Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
+
+def _now() -> datetime:
+    # naive local time — the UI displays these values as-is and compares
+    # them against datetime.now() in _relative_time
+    return datetime.now()
+
+
 class Base(DeclarativeBase):
     pass
 
@@ -20,9 +27,9 @@ class Command(Base):
     env_vars: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True, default=dict)
     auto_run: Mapped[bool] = mapped_column(default=False)
     tags: Mapped[Optional[list]] = mapped_column(JSON, nullable=True, default=list)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime, default=_now, onupdate=_now
     )
 
     def __repr__(self) -> str:
@@ -33,11 +40,15 @@ class ExecutionLog(Base):
     __tablename__ = "execution_logs"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    command_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    command_id: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        index=True,
+    )
     output: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     exit_code: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    started_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    started_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
     finished_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     def __repr__(self) -> str:
