@@ -19,7 +19,11 @@ Documento de referencia para agentes que colaboren en el proyecto. Aplica tanto 
 ```
 devcommandcenter/
 ├── __init__.py
-├── config.py              # APP_NAME, APP_VERSION, DATABASE_URL
+├── __main__.py            # python -m devcommandcenter
+├── cli.py                 # Bootstrap de la app (QApplication, icono, seed)
+├── config.py              # APP_NAME, APP_VERSION, DATABASE_URL, resource_path
+├── assets/
+│   └── logo.svg           # Icono de la aplicación
 ├── database/
 │   ├── connection.py        # SessionLocal, init_db, engine
 │   └── models.py            # SQLAlchemy ORM models (Command, ExecutionLog)
@@ -27,13 +31,14 @@ devcommandcenter/
 │   ├── command_service.py   # CRUD de comandos
 │   ├── execution_log_service.py  # Persistencia de logs de ejecución
 │   └── process_service.py   # Gestión de QProcess, señales de estado/salida
-├── ui/
-│   ├── theme.py             # Paleta, stylesheets, helpers de color
-│   ├── main_window.py       # MainWindow + CommandCard
-│   ├── log_window.py        # Ventana no-modal de logs por comando
-│   └── command_dialog.py    # Modal crear/editar comando
-└── utils/
-    └── (helpers generales)
+└── ui/
+    ├── theme.py             # Paleta, stylesheets, helpers de color
+    ├── main_window.py       # MainWindow: grid, filtros, menús
+    ├── command_card.py      # CommandCard (widget de tarjeta)
+    ├── log_window.py        # Ventana no-modal de logs por comando
+    ├── command_dialog.py    # Modal crear/editar comando
+    ├── history_dialog.py    # Historial de ejecuciones por comando
+    └── about_dialog.py      # Diálogo About
 tests/
 └── test_mvp.py              # Suite mínima de validación
 ```
@@ -103,15 +108,14 @@ Todos los colores están centralizados en `devcommandcenter/ui/theme.py`. **Nunc
 - **Sidebar izquierdo** (220 px fijo) con filtros de estado.
 - **Topbar** con título de página + search box alineado a la derecha.
 - **Grid responsive** de tarjetas fijas: `320 × 300 px`.
-- Columnas calculadas dinámicamente según ancho disponible (`avail // 336`).
+- Columnas calculadas dinámicamente según ancho disponible (`avail // (CARD_WIDTH + GRID_SPACING)`).
 - Reflow automático en `resizeEvent` y `showEvent`.
 
 ### Tarjetas (`CommandCard`)
 - Barra lateral de acento de 4 px que cambia de color según estado (gris → verde → rojo).
 - Nombre en bold, badge de estado a la derecha.
 - Chip de comando: `$` verde + comando en texto blanco sobre fondo oscuro.
-- Tags como pills con fondo neutro + texto azul claro (`#79c0ff`).
-- Botón **Run** verde sólido, **Stop** rojo sólido, **Delete** con hover a rojo sólido.
+- Botón **Run** verde sólido, **Stop** rojo sólido; acciones secundarias en menú `⋮`.
 
 ### Ventanas de logs (`LogWindow`)
 - **No-modal** (`QDialog` sin `exec()`; se abre con `show()`).
@@ -142,20 +146,23 @@ ProcessService (singleton) → ManagedProcess (1 por command_id) → QProcess
 # MainWindow mantiene registro
 self._log_windows: dict[int, LogWindow] = {}
 
-# Al abrir: reutilizar si existe, sino crear
+# Al abrir: reutilizar si existe y sigue visible, sino crear
 win = self._log_windows.get(cmd.id)
-if win is not None and win.isVisible():
-    win.raise_(); return
+if win is not None:
+    try:
+        win.show(); win.raise_(); win.activateWindow(); return
+    except RuntimeError:
+        self._log_windows.pop(cmd.id, None)
 
-win = LogWindow(...)
-win.finished.connect(lambda: self._log_windows.pop(cmd.id, None))
+win = LogWindow(...)  # WA_DeleteOnClose: se destruye al cerrar
+win.finished.connect(lambda *_: self._log_windows.pop(cmd.id, None))
 self._log_windows[cmd.id] = win
 win.show()
 ```
 
 ### Filtros en el grid
 - `_filter_state`: `"All" | "Running" | "Stopped" | "Failed"`.
-- `_filter_text`: búsqueda por nombre, descripción o tag.
+- `_filter_text`: búsqueda por nombre o descripción.
 - `_apply_filter()` oculta/muestra cards; `_relayout_grid()` recalcula posiciones.
 
 ---

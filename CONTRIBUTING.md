@@ -27,4 +27,3 @@ python tests/test_mvp.py
 - Use type hints where possible.
 - Keep functions focused and small.
 - Follow the existing module structure: `ui/`, `services/`, `database/`, `utils/`.
-- Add entries to `ref/bitacoras.md` for significant changes.

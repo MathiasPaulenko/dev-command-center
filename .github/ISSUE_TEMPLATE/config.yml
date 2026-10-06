@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions & Discussions
+    url: https://github.com/MathiasPaulenko/dev-command-center/discussions
+    about: For questions and open-ended conversation, use Discussions instead of Issues.

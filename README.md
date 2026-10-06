@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/logo.svg" width="120" alt="DevCommandCenter Logo">
+<img src="devcommandcenter/assets/logo.svg" width="120" alt="DevCommandCenter Logo">
 
 # DevCommandCenter
 
@@ -28,7 +28,6 @@ Built with a dark, accessible UI inspired by GitHub's design system, it offers a
 ### Command Management
 - **Card-based layout** — Visual grid of all your commands with status indicators.
 - **CRUD operations** — Create, edit, delete, and duplicate commands easily.
-- **Tagging system** — Organize commands with custom tags for quick filtering.
 - **Auto-run** — Mark commands to run automatically when the app starts.
 - **Import/Export** — Share your command configurations as JSON files.
 
@@ -46,9 +45,9 @@ Built with a dark, accessible UI inspired by GitHub's design system, it offers a
 
 ### UI/UX
 - **Dark theme** — Accessible WCAG AA compliant color palette (GitHub Dark inspired).
-- **Responsive grid** — Cards reflow dynamically based on window width.
-- **Fixed-size cards** — Consistent 320x300px cards for a polished look.
+- **Responsive grid** — Cards expand to fill their column and reflow dynamically on resize.
 - **High contrast** — Solid color buttons with white text for excellent readability.
+- **ANSI-aware logs** — Colored terminal output is rendered correctly in log windows.
 - **Custom app icon** — SVG logo rendered for all window sizes and taskbar.
 
 ---
@@ -92,6 +91,8 @@ pip install -r requirements.txt
 
 ```bash
 python main.py
+# or as a module
+python -m devcommandcenter
 ```
 
 The app will automatically initialize the database and seed demo commands on first run.
@@ -100,11 +101,35 @@ The app will automatically initialize the database and seed demo commands on fir
 
 ## Usage
 
-1. **Add a command** — Click "+ New Command" in the sidebar and fill in the details.
-2. **Run it** — Click the green **Run** button on any card.
-3. **Monitor** — Click **Logs** to see real-time output in a dedicated window.
+1. **Add a command** — Click **+ New Command** in the sidebar and fill in the details:
+   - `Command` — the executable, e.g. `npm`, `python`, `docker`
+   - `Arguments` — a JSON array, e.g. `["run", "dev"]`
+   - `Environment Variables` — a JSON object, e.g. `{"NODE_ENV": "development"}`
+   - `Working Directory` — where the process starts (optional)
+2. **Run it** — Click the green **Run** button, or double-click the card.
+3. **Monitor** — Each card's **⋮** menu offers **Logs** (live output), **History** (past runs), **Edit**, **Duplicate**, and **Delete**.
 4. **Filter** — Use the sidebar buttons to show only Running, Stopped, or Failed commands.
-5. **Search** — Use the search box to find commands by name, description, or tag.
+5. **Search** — Use the search box to find commands by name or description.
+
+> On Windows, non-`.exe` commands (like `npm` or `python` scripts) run through `cmd /c`; on Linux/macOS the command runs directly, so use the full executable name or path.
+
+---
+
+## Data Storage
+
+| Context | Location |
+|---|---|
+| Development / `pip` run | `devcommandcenter/data/devcommandcenter.db` |
+| Packaged app (Windows) | `%LOCALAPPDATA%\DevCommandCenter\` |
+| Packaged app (macOS) | `~/Library/Application Support/DevCommandCenter/` |
+| Packaged app (Linux) | `~/.local/share/DevCommandCenter/` |
+
+Override the database location with the `DCC_DATABASE_URL` environment variable:
+
+```bash
+set DCC_DATABASE_URL=sqlite:///C:/temp/dev.db  # Windows
+export DCC_DATABASE_URL=sqlite:////tmp/dev.db  # Linux/macOS
+```
 
 ---
 
@@ -114,7 +139,34 @@ The app will automatically initialize the database and seed demo commands on fir
 python tests/test_mvp.py
 ```
 
-This runs a minimal validation suite that creates a test command and verifies persistence.
+This runs a minimal validation suite that creates a test command and verifies persistence. It uses an isolated temporary database — your real data is never touched.
+
+### Manual E2E walkthrough
+
+```bash
+python scripts/manual_e2e.py
+```
+
+Drives the real GUI via UI Automation (pywinauto): runs and stops commands, opens log windows and dialogs, exercises filters/search and delete — saving screenshots to `e2e_artifacts/`. Requires `pywinauto` (Windows only).
+
+---
+
+## Building a Release
+
+PyInstaller builds are available three ways — all bundle the app icon and produce a single-file executable:
+
+```bash
+# Windows
+build.bat
+
+# Linux / macOS
+./build.sh
+
+# Cross-platform (Windows/Linux/macOS)
+python scripts/build.py
+```
+
+Tagging a `v*` release on GitHub triggers the `build-release` workflow, which builds Windows, Linux, and macOS binaries and attaches them to a GitHub Release.
 
 ---
 
@@ -122,9 +174,11 @@ This runs a minimal validation suite that creates a test command and verifies pe
 
 ```text
 dev-command-center/
-├── assets/
-│   └── logo.svg                    # Application icon (SVG)
 ├── devcommandcenter/
+│   ├── assets/
+│   │   └── logo.svg                # Application icon (SVG)
+│   ├── __main__.py                 # python -m devcommandcenter
+│   ├── cli.py                      # App bootstrap (icon, seed, QApplication)
 │   ├── config.py                   # App constants (name, version, DB URL)
 │   ├── database/
 │   │   ├── connection.py           # SessionLocal, init_db, engine
@@ -133,16 +187,20 @@ dev-command-center/
 │   │   ├── command_service.py      # Command CRUD operations
 │   │   ├── execution_log_service.py # Execution log persistence
 │   │   └── process_service.py      # QProcess lifecycle management
-│   ├── ui/
-│   │   ├── theme.py                # Color palette & stylesheets
-│   │   ├── main_window.py          # Main window & CommandCard widget
-│   │   ├── log_window.py           # Real-time log viewer (non-modal)
-│   │   └── command_dialog.py       # Create/Edit command modal
-│   └── utils/
-│       └── ...                     # Shared helpers
+│   └── ui/
+│       ├── theme.py                # Color palette & stylesheets
+│       ├── main_window.py          # Main window, grid, filters, menus
+│       ├── command_card.py         # CommandCard widget
+│       ├── log_window.py           # Real-time log viewer (non-modal)
+│       ├── command_dialog.py       # Create/Edit command modal
+│       ├── history_dialog.py       # Execution history viewer
+│       └── about_dialog.py         # About dialog
 ├── tests/
 │   └── test_mvp.py                 # Minimum validation suite
+├── scripts/
+│   └── build.py                    # Cross-platform PyInstaller build
 ├── main.py                         # Application entry point
+├── build.bat                       # Windows PyInstaller build
 ├── requirements.txt                # Python dependencies
 ├── AGENTS.md                       # Project rules & standards
 └── LICENSE                         # MIT License
@@ -152,39 +210,39 @@ dev-command-center/
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────┐
-│              UI Layer                   │
-│  ┌──────────┐  ┌──────────┐  ┌────────┐ │
-│  │MainWindow│  │LogWindow │  │Command │ │
-│  │(Cards)   │  │(Logs)    │  │Dialog  │ │
-│  └────┬─────┘  └────┬─────┘  └───┬────┘ │
-└───────┼─────────────┼────────────┼──────┘
-        │ Signals     │            │
-┌───────┼─────────────┼────────────┼──────┐
-│       ▼             ▼            ▼       │
-│  ┌─────────────────────────────────────┐ │
-│  │         ProcessService                │ │
-│  │  (ManagedProcess per command_id)    │ │
-│  └──────────────────┬──────────────────┘ │
-│                     │ QProcess           │
-│  ┌──────────────────┴──────────────────┐ │
-│  │         Service Layer               │ │
-│  │  CommandService │ ExecutionLogSvc  │ │
-│  └──────────────────┬──────────────────┘ │
-│                     │ SQLAlchemy         │
-│  ┌──────────────────┴──────────────────┐ │
-│  │         Data Layer                  │ │
-│  │            SQLite                   │ │
-│  └─────────────────────────────────────┘ │
-└──────────────────────────────────────────┘
+```text
+┌─────────────────────────────────────────────────────┐
+│                     UI Layer                        │
+│  ┌────────────┐  ┌──────────┐  ┌──────────────────┐ │
+│  │ MainWindow │  │LogWindow │  │ Dialogs          │ │
+│  │ + Cards    │  │ (logs)   │  │ Command/History/ │ │
+│  └─────┬──────┘  └────┬─────┘  │ About            │ │
+│        │ Signals      │        └──────────────────┘ │
+└────────┼──────────────┼─────────────────────────────┘
+         ▼              ▼
+┌─────────────────────────────────────────────────────┐
+│                 ProcessService                      │
+│         (ManagedProcess per command_id)             │
+│         QProcess · signals · exit codes             │
+└──────────────────────┬──────────────────────────────┘
+                       │
+┌──────────────────────┴──────────────────────────────┐
+│                  Service Layer                      │
+│        CommandService · ExecutionLogService         │
+│                      SQLAlchemy                     │
+└──────────────────────┬──────────────────────────────┘
+                       │
+┌──────────────────────┴──────────────────────────────┐
+│                   Data Layer                        │
+│             SQLite (per-user data dir)              │
+└─────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## Contributing
 
-Contributions are welcome! Please read [AGENTS.md](AGENTS.md) for the project's coding standards and UI/UX guidelines before submitting changes.
+Contributions are welcome! Read [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow and [AGENTS.md](AGENTS.md) for coding standards and UI/UX guidelines before submitting changes.
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feat/amazing-feature`)
