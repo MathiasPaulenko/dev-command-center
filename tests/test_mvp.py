@@ -1,6 +1,7 @@
 import os
 import sys
 import tempfile
+import time
 
 # Isolate the test database before devcommandcenter.config is imported —
 # DATABASE_URL is read at import time.
@@ -16,7 +17,7 @@ from devcommandcenter.services.command_service import CommandService
 from devcommandcenter.services.process_service import ProcessService
 
 # Need a QCoreApplication for QProcess signals
-app = QCoreApplication(sys.argv)
+app = QCoreApplication.instance() or QCoreApplication(sys.argv)
 
 
 def test_database():
@@ -52,8 +53,10 @@ def test_database():
     assert ok
     assert proc_service.get_state(cmd.id) == "Running"
 
-    while proc_service.get_state(cmd.id) == "Running":
+    deadline = time.monotonic() + 15
+    while proc_service.get_state(cmd.id) == "Running" and time.monotonic() < deadline:
         app.processEvents()
+        time.sleep(0.01)
 
     assert proc_service.get_state(cmd.id) == "Stopped"
 
