@@ -32,7 +32,7 @@ def resource_path(relative_path: str) -> Path:
     used by the build scripts.
     """
     if hasattr(sys, "_MEIPASS"):
-        return Path(getattr(sys, "_MEIPASS")) / "devcommandcenter" / relative_path
+        return Path(sys._MEIPASS) / "devcommandcenter" / relative_path
     return BASE_DIR / relative_path
 
 
@@ -41,6 +41,11 @@ if getattr(sys, "frozen", False):
 else:
     DATA_DIR = BASE_DIR / "data"
 
-DATA_DIR.mkdir(parents=True, exist_ok=True)
+try:
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+except OSError:
+    # e.g. read-only home dir; DATABASE_URL may still point somewhere usable
+    # and init_db() will surface the real error to the caller.
+    pass
 DATABASE_PATH = DATA_DIR / "devcommandcenter.db"
 DATABASE_URL = os.environ.get("DCC_DATABASE_URL") or f"sqlite:///{DATABASE_PATH}"
