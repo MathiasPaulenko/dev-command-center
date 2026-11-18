@@ -21,13 +21,10 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements.txt pytest
 
       - name: Compile check
-        run: |
-          python -m py_compile main.py
-          python -m py_compile devcommandcenter/ui/main_window.py
-          python -m py_compile devcommandcenter/services/process_service.py
+        run: python -m compileall -q devcommandcenter main.py tests scripts
 
       - name: Run tests
-        run: python tests/test_mvp.py
+        run: python -m pytest tests -v
