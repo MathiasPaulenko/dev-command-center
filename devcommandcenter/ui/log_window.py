@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import html
+import logging
 from datetime import datetime
+from typing import ClassVar
 
 from PySide6.QtCore import Qt, Slot
 from PySide6.QtWidgets import (
@@ -36,6 +38,15 @@ from devcommandcenter.ui.theme import (
     TEXT_SECONDARY,
 )
 
+# Keep a long-running process from growing the widget document or the
+# not-yet-rendered partial line without bound.
+_MAX_PENDING_CHARS = 512 * 1024
+_MAX_LOG_BLOCKS = 200_000
+# Stored logs can be megabytes; render only the tail when reopening history.
+_DISPLAY_CHARS = 256 * 1024
+
+logger = logging.getLogger(__name__)
+
 
 class LogWindow(QDialog):
     def __init__(
@@ -59,7 +70,14 @@ class LogWindow(QDialog):
         self._pending_err = ""
         self.setup_ui()
         self.connect_signals()
-        self._on_state_changed(self.command_id, process_service.get_state(command_id))
+        state = process_service.get_state(command_id)
+        # Pre-set the flag so the handler below doesn't print a misleading
+        # "new execution" banner for a run that started before we opened.
+        self._is_running = state == "Running"
+        if self._is_running:
+            ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self._append_info(f"── Attached to running execution · {ts} ──")
+        self._on_state_changed(self.command_id, state)
         self._load_last_execution()
 
     def setup_ui(self) -> None:
@@ -127,6 +145,8 @@ class LogWindow(QDialog):
 
         self.output = QTextEdit()
         self.output.setReadOnly(True)
+        # QTextEdit has no setMaximumBlockCount — the cap lives on the document.
+        self.output.document().setMaximumBlockCount(_MAX_LOG_BLOCKS)
         self.output.setStyleSheet(
             f"""
             QTextEdit {{
@@ -187,6 +207,8 @@ class LogWindow(QDialog):
         if command_id != self.command_id:
             return
         self._pending_out += text
+        if len(self._pending_out) > _MAX_PENDING_CHARS:
+            self._pending_out = self._pending_out[-_MAX_PENDING_CHARS:]
         self._pending_out = self._append_lines(self._pending_out, error=False)
 
     @Slot(str, str)
@@ -194,6 +216,8 @@ class LogWindow(QDialog):
         if command_id != self.command_id:
             return
         self._pending_err += text
+        if len(self._pending_err) > _MAX_PENDING_CHARS:
+            self._pending_err = self._pending_err[-_MAX_PENDING_CHARS:]
         self._pending_err = self._append_lines(self._pending_err, error=True)
 
     def _append_lines(self, buffer: str, error: bool) -> str:
@@ -238,13 +262,22 @@ class LogWindow(QDialog):
             else:
                 self.output.append(self._colorize(line))
 
+    def _append_raw_capped(self, text: str, error: bool = False) -> None:
+        if len(text) > _DISPLAY_CHARS:
+            self._append_info(
+                f"(older output omitted — showing last "
+                f"{_DISPLAY_CHARS:,} of {len(text):,} chars)"
+            )
+            text = text[-_DISPLAY_CHARS:]
+        self._append_raw(text, error=error)
+
     def _append_info(self, text: str) -> None:
         escaped = html.escape(text)
         self.output.append(
             f'<span style="color:{TEXT_SECONDARY}; font-style:italic">{escaped}</span>'
         )
 
-    _ANSI_COLORS: dict[int, str] = {
+    _ANSI_COLORS: ClassVar[dict[int, str]] = {
         30: "#000000", 31: "#f85149", 32: "#3fb950", 33: "#d29922",
         34: "#58a6ff", 35: "#f778ba", 36: "#39c5cf", 37: "#e6edf3",
         90: "#6e7681", 91: "#ff7b72", 92: "#56d364", 93: "#e3b341",
@@ -306,6 +339,12 @@ class LogWindow(QDialog):
         session = SessionLocal()
         try:
             last = ExecutionLogService(session).get_latest(int(self.command_id))
+        except Exception:
+            # A broken/uninitialized DB must not prevent the log window
+            # from opening — live output still works.
+            logger.exception("Could not load last execution for command %s",
+                             self.command_id)
+            last = None
         finally:
             session.close()
 
@@ -325,9 +364,9 @@ class LogWindow(QDialog):
 
         self._append_info(f"── Last execution · {result} · {when_str} ──")
         if last.output:
-            self._append_raw(last.output)
+            self._append_raw_capped(last.output)
         if last.error:
-            self._append_raw(last.error, error=True)
+            self._append_raw_capped(last.error, error=True)
         if not last.output and not last.error:
             self._append_info("(no output captured)")
         self._append_info("── End of last execution ──")

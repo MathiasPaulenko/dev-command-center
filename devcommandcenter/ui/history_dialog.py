@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
@@ -18,7 +20,7 @@ from PySide6.QtWidgets import (
 )
 
 from devcommandcenter.database.connection import SessionLocal
-from devcommandcenter.database.models import Command, ExecutionLog
+from devcommandcenter.database.models import Command
 from devcommandcenter.services.execution_log_service import ExecutionLogService
 from devcommandcenter.ui.theme import (
     BG_BASE,
@@ -33,6 +35,13 @@ from devcommandcenter.ui.theme import (
     TEXT_PRIMARY,
     TEXT_SECONDARY,
 )
+
+# Bound the memory the dialog can hold: at most HISTORY_LIMIT rows of
+# metadata, and a capped detail view (full output stays in the DB).
+HISTORY_LIMIT = 500
+_DETAIL_CHARS = 256 * 1024
+
+logger = logging.getLogger(__name__)
 
 
 class ExecutionHistoryDialog(QDialog):
@@ -137,6 +146,11 @@ class ExecutionHistoryDialog(QDialog):
         session = SessionLocal()
         try:
             ExecutionLogService(session).delete_by_command_id(self.command_id)
+        except Exception as e:
+            logger.exception("Could not clear history for command %s",
+                             self.command_id)
+            QMessageBox.critical(self, "Error", f"Failed to clear history:\n{e}")
+            return
         finally:
             session.close()
         self.list_widget.clear()
@@ -147,37 +161,57 @@ class ExecutionHistoryDialog(QDialog):
     def _load_history(self, command_id: int) -> None:
         session = SessionLocal()
         try:
-            logs = ExecutionLogService(session).get_by_command_id(command_id)
+            rows = ExecutionLogService(session).get_summaries(
+                command_id, limit=HISTORY_LIMIT
+            )
+        except Exception:
+            logger.exception("Could not load history for command %s", command_id)
+            rows = []
         finally:
             session.close()
 
-        if not logs:
+        if not rows:
             self.list_widget.addItem("No executions recorded yet.")
             return
 
-        for log in logs:
-            started = log.started_at.strftime("%Y-%m-%d %H:%M:%S") if log.started_at else "?"
-            if log.exit_code == 0:
+        for log_id, started_at, _finished_at, exit_code in rows:
+            started = started_at.strftime("%Y-%m-%d %H:%M:%S") if started_at else "?"
+            if exit_code == 0:
                 status = "Success"
                 status_color = GREEN
-            elif log.exit_code is None:
+            elif exit_code is None:
                 status = "Unknown"
                 status_color = TEXT_SECONDARY
             else:
-                status = f"Failed (exit {log.exit_code})"
+                status = f"Failed (exit {exit_code})"
                 status_color = RED
             item = QListWidgetItem(f"{started}  —  {status}")
             item.setForeground(QColor(status_color))
-            item.setData(Qt.ItemDataRole.UserRole, log)
+            item.setData(Qt.ItemDataRole.UserRole, log_id)
             self.list_widget.addItem(item)
+
+        if len(rows) >= HISTORY_LIMIT:
+            self.list_widget.addItem(
+                f"(older executions not shown — capped at {HISTORY_LIMIT})"
+            )
 
         if self.list_widget.count() > 0:
             self.list_widget.setCurrentRow(0)
             self._on_item_clicked(self.list_widget.item(0))
 
     def _on_item_clicked(self, item: QListWidgetItem) -> None:
-        log = item.data(Qt.ItemDataRole.UserRole)
-        if not isinstance(log, ExecutionLog):
+        log_id = item.data(Qt.ItemDataRole.UserRole)
+        if not isinstance(log_id, int):
+            return
+        session = SessionLocal()
+        try:
+            log = ExecutionLogService(session).get_by_id(log_id)
+        except Exception:
+            logger.exception("Could not load log %s", log_id)
+            return
+        finally:
+            session.close()
+        if log is None:
             return
         parts: list[str] = []
         started = log.started_at.strftime("%Y-%m-%d %H:%M:%S") if log.started_at else "?"
@@ -188,10 +222,21 @@ class ExecutionHistoryDialog(QDialog):
         parts.append("")
         if log.output:
             parts.append("STDOUT:")
-            parts.append(log.output)
+            parts.append(self._cap(log.output))
         if log.error:
             parts.append("STDERR:")
-            parts.append(log.error)
+            parts.append(self._cap(log.error))
         if not log.output and not log.error:
             parts.append("(no output captured)")
         self.detail.setPlainText("\n".join(parts))
+
+    @staticmethod
+    def _cap(text: str) -> str:
+        """Trim an oversized log body so the detail view stays responsive."""
+        if len(text) <= _DETAIL_CHARS:
+            return text
+        return (
+            f"… older output omitted — showing last "
+            f"{_DETAIL_CHARS:,} of {len(text):,} chars …\n"
+            + text[-_DETAIL_CHARS:]
+        )

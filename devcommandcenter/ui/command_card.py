@@ -46,6 +46,8 @@ def _relative_time(dt: datetime | None) -> str:
     if dt is None:
         return "never"
     delta = datetime.now() - dt
+    if delta.total_seconds() < 0:
+        return "just now"
     if delta.days > 0:
         return f"{delta.days}d ago"
     mins = delta.seconds // 60

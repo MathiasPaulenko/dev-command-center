@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import time
 from datetime import datetime
 
@@ -22,11 +23,15 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from sqlalchemy import func
 
 from devcommandcenter.config import APP_VERSION
 from devcommandcenter.database.connection import SessionLocal
-from devcommandcenter.database.models import Command
-from devcommandcenter.services.command_service import CommandService
+from devcommandcenter.database.models import Command, ExecutionLog
+from devcommandcenter.services.command_service import (
+    CommandService,
+    sanitize_command_data,
+)
 from devcommandcenter.services.execution_log_service import ExecutionLogService
 from devcommandcenter.services.process_service import ProcessService
 from devcommandcenter.ui.about_dialog import AboutDialog
@@ -52,6 +57,8 @@ from devcommandcenter.ui.theme import (
 )
 
 GRID_SPACING = 20
+
+logger = logging.getLogger(__name__)
 
 
 def _now() -> datetime:
@@ -244,9 +251,23 @@ class MainWindow(QMainWindow):
         try:
             service = CommandService(session)
             commands = service.get_all()
+            # One grouped query for every card's last-run timestamp instead of
+            # a session + query per card.
+            last_runs = dict(
+                session.query(
+                    ExecutionLog.command_id,
+                    func.max(ExecutionLog.finished_at),
+                )
+                .group_by(ExecutionLog.command_id)
+                .all()
+            )
             self._all_commands = commands
             for cmd in commands:
-                self.add_command_card(cmd)
+                self.add_command_card(cmd, last_runs.get(cmd.id))
+        except Exception as e:
+            # Don't crash the whole window if the DB read fails after startup.
+            logger.exception("Failed to load commands")
+            QMessageBox.critical(self, "Error", f"Failed to load commands:\n{e}")
         finally:
             session.close()
         self._apply_filter()
@@ -289,7 +310,8 @@ class MainWindow(QMainWindow):
         vp = self.scroll_area.viewport().width()
         if vp <= 1:
             vp = max(self.width() - 220, cell_w)
-        avail = vp - 56  # minus grid content margins
+        margins = self.grid_layout.contentsMargins()
+        avail = vp - margins.left() - margins.right()
         cols = max(1, avail // cell_w)
 
         visible_cards = [c for c in self._cards.values() if c.visible]
@@ -318,19 +340,14 @@ class MainWindow(QMainWindow):
         if hasattr(self, "_cards") and self._cards:
             self._relayout_grid()
 
-    def add_command_card(self, command: Command) -> None:
+    def add_command_card(self, command: Command, last_run: datetime | None = None) -> None:
         card = CommandCard(command)
         card.run_btn.clicked.connect(lambda _, c=command: self.run_command(c))
         card.stop_btn.clicked.connect(lambda _, c=command: self.stop_command(c))
         card.menu_btn.clicked.connect(lambda _, c=command, crd=card: self._show_card_menu(c, crd))
         card.activated.connect(lambda c=command: self.run_command(c))
         card.update_status(self.process_service.get_state(command.id))
-        session = SessionLocal()
-        try:
-            last_log = ExecutionLogService(session).get_latest(command.id)
-            card.set_last_run(last_log.finished_at if last_log else None)
-        finally:
-            session.close()
+        card.set_last_run(last_run)
         self._cards[command.id] = card
 
     def _show_card_menu(self, command: Command, card: CommandCard) -> None:
@@ -367,7 +384,10 @@ class MainWindow(QMainWindow):
 
     @Slot(str, str)
     def on_state_changed(self, command_id: str, state: str) -> None:
-        cid = int(command_id)
+        try:
+            cid = int(command_id)
+        except (TypeError, ValueError):
+            return
         self.update_card_status(cid, state)
         if state == "Running":
             self._running_ids.add(cid)
@@ -396,7 +416,10 @@ class MainWindow(QMainWindow):
     @Slot(str, str, str, int, object)
     def on_log_ready(self, command_id: str, stdout: str, stderr: str,
                      exit_code: int, started_at) -> None:
-        cid = int(command_id)
+        try:
+            cid = int(command_id)
+        except (TypeError, ValueError):
+            return
         if cid not in self._cards:
             return  # the command was deleted while running
         session = SessionLocal()
@@ -410,6 +433,9 @@ class MainWindow(QMainWindow):
                 "started_at": started_at,
                 "finished_at": _now(),
             })
+        except Exception:
+            # A failed log write must not crash the event loop.
+            logger.exception("Failed to persist execution log for command %s", cid)
         finally:
             session.close()
         # Refresh last-run timestamp on the card
@@ -479,21 +505,25 @@ class MainWindow(QMainWindow):
             card.set_last_run(None)
 
     def duplicate_command(self, command: Command) -> None:
+        # isinstance guards: rows written before validation existed may hold
+        # non-list/non-dict JSON values.
         data = {
             "name": f"{command.name} (copy)",
             "description": command.description,
             "working_directory": command.working_directory,
             "command": command.command,
-            "arguments": list(command.arguments) if command.arguments else [],
-            "env_vars": dict(command.env_vars) if command.env_vars else {},
+            "arguments": list(command.arguments) if isinstance(command.arguments, list) else [],
+            "env_vars": dict(command.env_vars) if isinstance(command.env_vars, dict) else {},
             "auto_run": False,
-            "tags": list(command.tags) if command.tags else [],
+            "tags": list(command.tags) if isinstance(command.tags, list) else [],
         }
         session = SessionLocal()
         try:
             service = CommandService(session)
             service.create(data)
             self.load_commands()
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to duplicate command:\n{e}")
         finally:
             session.close()
 
@@ -518,10 +548,10 @@ class MainWindow(QMainWindow):
                 pass
         session = SessionLocal()
         try:
+            # delete() also removes the command's execution logs
             if not CommandService(session).delete(command.id):
                 QMessageBox.warning(self, "Warning", "Command could not be deleted.")
                 return
-            ExecutionLogService(session).delete_by_command_id(command.id)
             self.load_commands()
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to delete command:\n{e}")
@@ -537,21 +567,20 @@ class MainWindow(QMainWindow):
                 data = json.load(f)
             if not isinstance(data, list):
                 raise ValueError("JSON file must contain an array of commands.")
-            for item in data:
-                if not isinstance(item, dict) or not item.get("name") or not item.get("command"):
-                    raise ValueError("Each command must be an object with 'name' and 'command'.")
+            items = []
+            for i, item in enumerate(data):
+                if not isinstance(item, dict):
+                    raise ValueError(f"Item {i + 1} must be an object.")
+                try:
+                    items.append(sanitize_command_data(item))
+                except ValueError as e:
+                    raise ValueError(f"Item {i + 1}: {e}") from e
             session = SessionLocal()
             try:
                 service = CommandService(session)
-                for item in data:
-                    item = {
-                        k: v for k, v in item.items()
-                        if k in {"name", "description", "working_directory", "command",
-                                 "arguments", "env_vars", "auto_run", "tags"}
-                    }
-                    service.create(item)
+                service.create_many(items)
                 self.load_commands()
-                QMessageBox.information(self, "Import", f"Imported {len(data)} commands.")
+                QMessageBox.information(self, "Import", f"Imported {len(items)} commands.")
             finally:
                 session.close()
         except Exception as e:

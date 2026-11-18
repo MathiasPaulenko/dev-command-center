@@ -145,7 +145,7 @@ class AboutDialog(QDialog):
             'github.com/MathiasPaulenko/dev-command-center</a>'
         )
         link_lbl.setStyleSheet(
-            f"font-size: 12px; background: transparent; border: none;"
+            "font-size: 12px; background: transparent; border: none;"
         )
         link_lbl.setTextFormat(Qt.TextFormat.RichText)
         link_lbl.setTextInteractionFlags(

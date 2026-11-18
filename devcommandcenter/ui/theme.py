@@ -27,7 +27,8 @@ RED       = "#ff7b72"
 RED_FILL  = "#da3633"
 RED_HOVER = "#e5534b"
 
-AMBER = "#d29922"
+# Qt parses 8-digit hex as #AARRGGBB (alpha first), so the alpha goes in front.
+SELECTION_BG = "#334493f8"  # ACCENT at ~20% opacity
 
 STATUS_RUNNING = GREEN
 STATUS_STOPPED = TEXT_SECONDARY
@@ -70,7 +71,7 @@ QLineEdit {{
     border-radius: 8px;
     padding: 9px 14px;
     font-size: 13px;
-    selection-background-color: {ACCENT}33;
+    selection-background-color: {SELECTION_BG};
 }}
 QLineEdit:focus {{ border-color: {ACCENT}; }}
 
@@ -83,7 +84,7 @@ QTextEdit {{
     font-family: "Cascadia Code", "JetBrains Mono", "Fira Code", "Consolas", monospace;
     font-size: 13px;
     line-height: 1.6;
-    selection-background-color: {ACCENT}33;
+    selection-background-color: {SELECTION_BG};
 }}
 
 QPushButton {{
