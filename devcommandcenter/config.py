@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 APP_NAME = "DevCommandCenter"
-APP_VERSION = "1.3.0"
+APP_VERSION = "1.3.1"
 
 BASE_DIR = Path(__file__).resolve().parent
 

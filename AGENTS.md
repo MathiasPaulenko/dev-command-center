@@ -229,4 +229,4 @@ Antes de considerar un cambio de UI como completo:
 
 ---
 
-*Última actualización: 2026-06-08*
+*Última actualización: 2026-11-18*

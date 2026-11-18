@@ -2,6 +2,41 @@
 
 All notable changes to DevCommandCenter will be documented in this file.
 
+## [1.3.1] - 2026-11-18
+
+### Fixed
+
+- Deleting a command no longer leaks execution logs, and SQLite can no longer
+  reassign a deleted rowid to a new command (which made it inherit the old
+  command's history). Tables now use `sqlite_autoincrement`.
+- `stop()` on a failed process no longer rewrites the state to Stopped.
+- `CommandService.create`/`update` no longer accept unknown or identity fields
+  (`id`, `created_at`, `updated_at`) — inputs are sanitized through
+  `sanitize_command_data` with type validation.
+- Import is now atomic: the whole file validates first and inserts in a single
+  transaction instead of committing per item.
+- Process stdout/stderr buffers are capped (4 MB tail kept), so a runaway
+  command can no longer exhaust memory or bloat the database.
+- Output decoding now uses incremental UTF-8 decoders and drains residual
+  bytes at process end — no more mangled multibyte characters or lost tail.
+- Selection color is `#AARRGGBB` now (Qt reads alpha first); the selection no
+  longer shows a wrong hue.
+- History dialog loads bounded metadata-only rows (latest 500) and fetches a
+  log's output on demand — opening history no longer pulls every stored log
+  into memory. The log window also renders a capped tail for oversized logs.
+- Startup recovers from a corrupted database file by moving it aside and
+  rebuilding; the recovery targets the file behind `DCC_DATABASE_URL`.
+- In-memory `sqlite:///:memory:` databases now share one pooled connection, so
+  the schema survives across sessions.
+- `test_mvp.py` wait loop has a timeout (no more possible CI hang).
+
+### Changed
+
+- Added `tests/test_stability.py` — regression suite covering service
+  validation, cascades, process lifecycle, output caps and theming.
+- CI compiles every module and runs pytest instead of a single script.
+- sdist now ships assets (`MANIFEST.in`); `pytest` added to `dev` extras.
+
 ## [1.3.0] - 2026-10-06
 
 ### Fixed
