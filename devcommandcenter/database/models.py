@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import ClassVar
 
 from sqlalchemy import JSON, DateTime, Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -17,16 +17,19 @@ class Base(DeclarativeBase):
 
 class Command(Base):
     __tablename__ = "commands"
+    # Without AUTOINCREMENT SQLite may reuse a deleted rowid for the next
+    # insert, and a new command would "inherit" the old one's execution logs.
+    __table_args__: ClassVar = {"sqlite_autoincrement": True}
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    working_directory: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    working_directory: Mapped[str | None] = mapped_column(String(512), nullable=True)
     command: Mapped[str] = mapped_column(String(512), nullable=False)
-    arguments: Mapped[Optional[list]] = mapped_column(JSON, nullable=True, default=list)
-    env_vars: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True, default=dict)
+    arguments: Mapped[list | None] = mapped_column(JSON, nullable=True, default=list)
+    env_vars: Mapped[dict | None] = mapped_column(JSON, nullable=True, default=dict)
     auto_run: Mapped[bool] = mapped_column(default=False)
-    tags: Mapped[Optional[list]] = mapped_column(JSON, nullable=True, default=list)
+    tags: Mapped[list | None] = mapped_column(JSON, nullable=True, default=list)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=_now, onupdate=_now
@@ -38,6 +41,7 @@ class Command(Base):
 
 class ExecutionLog(Base):
     __tablename__ = "execution_logs"
+    __table_args__: ClassVar = {"sqlite_autoincrement": True}
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     command_id: Mapped[int] = mapped_column(
@@ -45,11 +49,11 @@ class ExecutionLog(Base):
         nullable=False,
         index=True,
     )
-    output: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    exit_code: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    output: Mapped[str | None] = mapped_column(Text, nullable=True)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    exit_code: Mapped[int | None] = mapped_column(Integer, nullable=True)
     started_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
-    finished_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     def __repr__(self) -> str:
         return f"<ExecutionLog(id={self.id}, command_id={self.command_id})>"
