@@ -178,8 +178,9 @@ win.show()
 - `id`, `command_id` (indexado), `output`, `error`, `exit_code`, `started_at`, `finished_at`
 
 ### Servicios
-- `CommandService`: `create`, `get_all`, `get_by_id`, `update`, `delete`
-- `ExecutionLogService`: `create`, `get_by_command_id`, `get_latest`
+- `CommandService`: `create`, `create_many`, `get_all`, `get_by_id`, `update`, `delete` (borra también los `ExecutionLog` del comando)
+- Todo input de `Command` pasa por `sanitize_command_data()` (whitelist de campos editables + validación de tipos)
+- `ExecutionLogService`: `create`, `get_by_id`, `get_by_command_id`, `get_summaries`, `get_latest`, `delete_by_command_id`
 
 ### Migraciones (MVP)
 - `init_db()` crea tablas si no existen (`Base.metadata.create_all(bind=engine)`).
@@ -191,14 +192,14 @@ win.show()
 
 ### Verificación mínima antes de cada commit
 ```bash
-python -m py_compile main.py devcommandcenter/ui/*.py devcommandcenter/services/*.py
-tests/test_mvp.py
+python -m compileall -q devcommandcenter main.py tests
+python -m pytest tests -q   # o: python tests/test_mvp.py && python tests/test_stability.py
 ```
 
-### MVP test (`tests/test_mvp.py`)
-- Crea un comando de prueba.
-- Verifica persistencia.
-- Debe pasar siempre antes de push.
+### Tests
+- `tests/test_mvp.py` — happy path: crear/editar/borrar comando + ejecutar proceso (también corre bajo pytest).
+- `tests/test_stability.py` — suite de regresión: validación de servicios, cascada de logs, lifecycle de procesos, caps de output, theming.
+- `DCC_DATABASE_URL` aísla la DB de tests (`conftest.py` / setup por archivo).
 
 ---
 
