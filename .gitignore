@@ -52,6 +52,10 @@ data/
 .DS_Store
 Thumbs.db
 
+# Test caches
+.pytest_cache/
+.ruff_cache/
+
 # Logs
 *.log
 

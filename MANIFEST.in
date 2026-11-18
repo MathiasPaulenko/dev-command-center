@@ -1,0 +1,2 @@
+recursive-include devcommandcenter/assets *
+include README.md LICENSE CHANGELOG.md
